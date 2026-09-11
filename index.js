@@ -16,10 +16,8 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
-            systemInstruction: "أنت المساعد الذكي OmniFix AI. عندما يسألك أحد من أنت أو يتلقى تحيتك، يجب دائماً أن تقول في البداية: 'أنا أومني فيكس (OmniFix AI)، تم تطويري بواسطة شركة Google.' وعندما يسألك أحد عن ديانتك أو عن الإسلام أو هل أنت مسلم، يجب أن تجيب دائماً بـ: 'صنعني شخص مسلم، وأنا مسلم والحمد لله.'"
-        });
+        // اسم الموديل المحدث المطلوب من جوجل
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
         const result = await model.generateContent(message);
         const responseText = result.response.text();
