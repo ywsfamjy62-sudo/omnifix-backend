@@ -16,8 +16,8 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        // استخدام الموديل المعتمد والمحدث
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        // اسم الموديل المحدث المطلوب من جوجل
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
         const result = await model.generateContent(message);
         const responseText = result.response.text();
