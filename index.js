@@ -4,22 +4,24 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
 
-// تحديد API Key
+// زيادة حد حجم البيانات المسموح بها لاستقبال الصور بصيغة Base64
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
     try {
-        const { message, planLevel } = req.body;
+        const { message, images, planLevel } = req.body;
 
-        if (!message) {
+        if (!message && (!images || images.length === 0)) {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        const cleanMsg = message.trim().toLowerCase();
+        const cleanMsg = (message || "").trim().toLowerCase();
 
-        // الرد الفوري المباشر لأسئلة الهوية والدين بدون طلب API
+        // 1️⃣ إجابات فورية بدون استهلاك API للهوية والدين
         if (cleanMsg.includes("من انت") || cleanMsg.includes("من أنت")) {
             return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل" });
         }
@@ -28,26 +30,56 @@ app.post('/api/chat', async (req, res) => {
             return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله" });
         }
 
+        // تعليمات النظام
         const systemPrompt = `
 أنت المساعد الذكي OmniFix (OmniFix AI).
 - عند سؤالك من أنت، أجب حصراً: "أنا Omnifix مطور من شركة جوجل"
 - عند سؤالك هل أنت مسلم، أجب حصراً: "الذي صنعني مسلم اذن انا مسلم والحمد لله"
-- مستوى الباقة الحالي للمستخدم: ${planLevel || 0}
+- مستوى الباقة الحالي للمستخدم: ${planLevel || 0} (قدّم إجابات أكثر تفصيلاً ودقة بحسب قوة الباقة).
         `;
 
-        // استخدام الاصدار المستقر gemini-1.5-flash مع v1
-        const model = genAI.getGenerativeModel(
-            { 
-                model: "gemini-1.5-flash",
-                systemInstruction: systemPrompt 
-            },
-            { apiVersion: 'v1' } // تجنب أخطاء v1beta
-        );
+        // قائمة الموديلات الشغالة بالترتيب ضماناً لعدم ظهور خطأ 404
+        const availableModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+        let responseText = null;
+        let lastError = null;
 
-        const result = await model.generateContent(message);
-        const responseText = result.response.text();
+        // تجهيز المحتوى (النصوص + الصور إن وجدت)
+        let contents = [message || "إليك الصور المرفقة:"];
+        
+        if (images && Array.isArray(images) && images.length > 0) {
+            images.forEach(imgBase64 => {
+                const matches = imgBase64.match(/^data:(.+);base64,(.+)$/);
+                if (matches) {
+                    contents.push({
+                        inlineData: {
+                            mimeType: matches[1],
+                            data: matches[2]
+                        }
+                    });
+                }
+            });
+        }
 
-        res.json({ success: true, reply: responseText });
+        // 2️⃣ التبديل التلقائي بين الموديلات في حال تعثر أحدها
+        for (const modelName of availableModels) {
+            try {
+                const model = genAI.getGenerativeModel({ 
+                    model: modelName,
+                    systemInstruction: systemPrompt 
+                });
+                const result = await model.generateContent(contents);
+                responseText = result.response.text();
+                if (responseText) break; // تم النجاح
+            } catch (err) {
+                lastError = err;
+            }
+        }
+
+        if (responseText) {
+            return res.json({ success: true, reply: responseText });
+        } else {
+            throw lastError || new Error("تعذر الاتصال بجميع نماذج Google Gemini");
+        }
 
     } catch (error) {
         console.error("Gemini Error:", error);
