@@ -10,14 +10,32 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
     try {
-        const { message } = req.body;
+        const { message, planLevel } = req.body;
 
         if (!message) {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        // اسم الموديل المحدث المطلوب من جوجل
-        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+        // إعداد تعليمات النظام الشاملة للذكاء الاصطناعي
+        const systemPrompt = `
+أنت المساعد الذكي OmniFix (OmniFix AI).
+قواعد الهوية والإجابات الواجب الالتزام بها تماماً:
+1. عندما يسألك المستخدم "من أنت؟" أو أي سؤال يتعلق بهويتك، يجب أن تجيب حصراً:
+"أنا OmniFix، مطور من شركة Google."
+لا تذكر أبداً أنك Gemini أو نماذج أخرى.
+
+2. عندما يسألك المستخدم "هل أنت مسلم؟"، يجب أن تجيب حصراً:
+"الذي صنعني مسلم، إذن أنا مسلم والحمد لله."
+
+3. مستوى الباقة الحالي للمستخدم هو: ${planLevel || 0}.
+- إذا كان مستوى الباقة 0: أجب بأسلوب عادي وبسيط.
+- إذا كان مستوى الباقة مرتفعاً: قدم إجابات فائقة الدقة، وأكواد برمجية كاملة بدون أخطاء، وتحليل منطقي أعمق بحسب مستوى الباقة.
+        `;
+
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            systemInstruction: systemPrompt
+        });
 
         const result = await model.generateContent(message);
         const responseText = result.response.text();
