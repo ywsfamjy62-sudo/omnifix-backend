@@ -6,6 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// تحديد API Key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
@@ -16,49 +17,37 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        const lowerMsg = message.trim().toLowerCase();
+        const cleanMsg = message.trim().toLowerCase();
 
-        // 1️⃣ رد سريع ومستقل لأسئلة الهوية والدين لمنع أي أخطاء
-        if (lowerMsg.includes("من انت") || lowerMsg.includes("من أنت")) {
+        // الرد الفوري المباشر لأسئلة الهوية والدين بدون طلب API
+        if (cleanMsg.includes("من انت") || cleanMsg.includes("من أنت")) {
             return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل" });
         }
 
-        if (lowerMsg.includes("هل انت مسلم") || lowerMsg.includes("هل أنت مسلم")) {
+        if (cleanMsg.includes("هل انت مسلم") || cleanMsg.includes("هل أنت مسلم")) {
             return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله" });
         }
 
-        // 2️⃣ قائمة أسماء الموديلات المعتمدة للتجربة التلقائية
-        const availableModels = ["gemini-1.5-flash-001", "gemini-1.5-pro", "gemini-pro"];
-        let responseText = null;
-        let lastError = null;
-
         const systemPrompt = `
 أنت المساعد الذكي OmniFix (OmniFix AI).
-- عند سؤالك من أنت، أجب: "أنا Omnifix مطور من شركة جوجل"
-- عند سؤالك هل أنت مسلم، أجب: "الذي صنعني مسلم اذن انا مسلم والحمد لله"
+- عند سؤالك من أنت، أجب حصراً: "أنا Omnifix مطور من شركة جوجل"
+- عند سؤالك هل أنت مسلم، أجب حصراً: "الذي صنعني مسلم اذن انا مسلم والحمد لله"
 - مستوى الباقة الحالي للمستخدم: ${planLevel || 0}
         `;
 
-        // المحاولة على الموديلات حتى ينجح أحدها
-        for (const modelName of availableModels) {
-            try {
-                const model = genAI.getGenerativeModel({ 
-                    model: modelName,
-                    systemInstruction: systemPrompt 
-                });
-                const result = await model.generateContent(message);
-                responseText = result.response.text();
-                if (responseText) break; // نجحت المحاولة
-            } catch (err) {
-                lastError = err;
-            }
-        }
+        // استخدام الاصدار المستقر gemini-1.5-flash مع v1
+        const model = genAI.getGenerativeModel(
+            { 
+                model: "gemini-1.5-flash",
+                systemInstruction: systemPrompt 
+            },
+            { apiVersion: 'v1' } // تجنب أخطاء v1beta
+        );
 
-        if (responseText) {
-            res.json({ success: true, reply: responseText });
-        } else {
-            throw lastError || new Error("فشل الاتصال بنماذج Google API");
-        }
+        const result = await model.generateContent(message);
+        const responseText = result.response.text();
+
+        res.json({ success: true, reply: responseText });
 
     } catch (error) {
         console.error("Gemini Error:", error);
