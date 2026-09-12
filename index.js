@@ -16,15 +16,8 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        // استخدام الموديل المستقر المحدث
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash",
-            systemInstruction: `أنت المساعد الذكي الشامل OmniFix AI.
-1. تجيب على الأسئلة والدردشة وتكتب الأكواد البرمجية بدقة عالية.
-2. عندما يطلب منك المستخدم (صورة أو رسم أو تصميم)، اكتب الوصف بالإنجليزية وضعه داخل هذا الرابط مباشرة:
-IMAGE:[https://image.pollinations.ai/prompt/وصف_الصورة_بالانجليزي?width=1024&height=1024&nologo=true]
-ثم اكتب له شرحاً بسيطاً تحت الصورة باللغة العربية.`
-        });
+        // اسم الموديل المحدث المطلوب من جوجل
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
         const result = await model.generateContent(message);
         const responseText = result.response.text();
