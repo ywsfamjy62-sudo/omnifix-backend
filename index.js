@@ -1,15 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(cors());
-
-// زيادة حد حجم البيانات المسموح بها لاستقبال الصور بصيغة Base64
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
     try {
@@ -21,7 +15,7 @@ app.post('/api/chat', async (req, res) => {
 
         const cleanMsg = (message || "").trim().toLowerCase();
 
-        // 1️⃣ إجابات فورية بدون استهلاك API للهوية والدين
+        // 1️⃣ إجابات فورية بدون الاتصال بجوجل
         if (cleanMsg.includes("من انت") || cleanMsg.includes("من أنت")) {
             return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل" });
         }
@@ -30,59 +24,50 @@ app.post('/api/chat', async (req, res) => {
             return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله" });
         }
 
-        // تعليمات النظام
-        const systemPrompt = `
-أنت المساعد الذكي OmniFix (OmniFix AI).
-- عند سؤالك من أنت، أجب حصراً: "أنا Omnifix مطور من شركة جوجل"
-- عند سؤالك هل أنت مسلم، أجب حصراً: "الذي صنعني مسلم اذن انا مسلم والحمد لله"
-- مستوى الباقة الحالي للمستخدم: ${planLevel || 0} (قدّم إجابات أكثر تفصيلاً ودقة بحسب قوة الباقة).
-        `;
+        // تجهيز بيانات الطلب المباشر لـ API
+        const apiKey = process.env.GEMINI_API_KEY;
+        const systemPrompt = `أنت المساعد الذكي OmniFix (OmniFix AI). مستوى الباقة الحالي: ${planLevel || 0}.`;
 
-        // قائمة الموديلات الشغالة بالترتيب ضماناً لعدم ظهور خطأ 404
-        const availableModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-        let responseText = null;
-        let lastError = null;
+        let parts = [{ text: `${systemPrompt}\n\nالمستخدم: ${message || ""}` }];
 
-        // تجهيز المحتوى (النصوص + الصور إن وجدت)
-        let contents = [message || "إليك الصور المرفقة:"];
-        
-        if (images && Array.isArray(images) && images.length > 0) {
-            images.forEach(imgBase64 => {
-                const matches = imgBase64.match(/^data:(.+);base64,(.+)$/);
-                if (matches) {
-                    contents.push({
-                        inlineData: {
-                            mimeType: matches[1],
-                            data: matches[2]
-                        }
+        if (images && Array.isArray(images)) {
+            images.forEach(img => {
+                const match = img.match(/^data:(.+);base64,(.+)$/);
+                if (match) {
+                    parts.push({
+                        inline_data: { mime_type: match[1], data: match[2] }
                     });
                 }
             });
         }
 
-        // 2️⃣ التبديل التلقائي بين الموديلات في حال تعثر أحدها
-        for (const modelName of availableModels) {
-            try {
-                const model = genAI.getGenerativeModel({ 
-                    model: modelName,
-                    systemInstruction: systemPrompt 
-                });
-                const result = await model.generateContent(contents);
-                responseText = result.response.text();
-                if (responseText) break; // تم النجاح
-            } catch (err) {
-                lastError = err;
+        // 2️⃣ الاتصال المباشر بـ REST API بأسماء الموديلات الرسمية
+        const models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-1.5-flash"];
+        let responseText = null;
+
+        for (const model of models) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts }] })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
+                responseText = data.candidates[0].content.parts[0].text;
+                break;
             }
         }
 
         if (responseText) {
             return res.json({ success: true, reply: responseText });
         } else {
-            throw lastError || new Error("تعذر الاتصال بجميع نماذج Google Gemini");
+            return res.status(500).json({ success: false, error: "فشل الاتصال مع موديلات جوجل، تحقق من مفتاح API Key" });
         }
 
     } catch (error) {
-        console.error("Gemini Error:", error);
+        console.error("Server Error:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
