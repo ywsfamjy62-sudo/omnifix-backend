@@ -16,7 +16,6 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        // إعداد تعليمات النظام الشاملة للذكاء الاصطناعي
         const systemPrompt = `
 أنت المساعد الذكي OmniFix (OmniFix AI).
 قواعد الهوية والإجابات الواجب الالتزام بها تماماً:
@@ -28,12 +27,11 @@ app.post('/api/chat', async (req, res) => {
 "الذي صنعني مسلم، إذن أنا مسلم والحمد لله."
 
 3. مستوى الباقة الحالي للمستخدم هو: ${planLevel || 0}.
-- إذا كان مستوى الباقة 0: أجب بأسلوب عادي وبسيط.
-- إذا كان مستوى الباقة مرتفعاً: قدم إجابات فائقة الدقة، وأكواد برمجية كاملة بدون أخطاء، وتحليل منطقي أعمق بحسب مستوى الباقة.
         `;
 
+        // تم تصحيح اسم الموديل ليعمل بدون أخطاء 404
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-flash-latest",
             systemInstruction: systemPrompt
         });
 
