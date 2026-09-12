@@ -16,30 +16,49 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        // تعليمات النظام الصارمة لقواعد الهوية والإجابات
+        const lowerMsg = message.trim().toLowerCase();
+
+        // 1️⃣ رد سريع ومستقل لأسئلة الهوية والدين لمنع أي أخطاء
+        if (lowerMsg.includes("من انت") || lowerMsg.includes("من أنت")) {
+            return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل" });
+        }
+
+        if (lowerMsg.includes("هل انت مسلم") || lowerMsg.includes("هل أنت مسلم")) {
+            return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله" });
+        }
+
+        // 2️⃣ قائمة أسماء الموديلات المعتمدة للتجربة التلقائية
+        const availableModels = ["gemini-1.5-flash-001", "gemini-1.5-pro", "gemini-pro"];
+        let responseText = null;
+        let lastError = null;
+
         const systemPrompt = `
 أنت المساعد الذكي OmniFix (OmniFix AI).
-التزم بالقواعد التالية بدقة شديدة:
-1. عندما يسألك المستخدم "من أنت؟" أو "من انت" أو أي سؤال يتعلق بهويتك، يجب أن تجيب فقط بالحرف:
-"أنا Omnifix مطور من شركة جوجل"
-لا تذكر أبداً كلمة Gemini أو أنه تم تطويرك بواسطة Google بطريقة أخرى.
-
-2. عندما يسألك المستخدم "هل أنت مسلم؟" أو "هل انت مسلم"، يجب أن تجيب فقط بالحرف:
-"الذي صنعني مسلم اذن انا مسلم والحمد لله"
-
-3. مستوى الباقة الحالي المختار من المستخدم هو: ${planLevel || 0}.
+- عند سؤالك من أنت، أجب: "أنا Omnifix مطور من شركة جوجل"
+- عند سؤالك هل أنت مسلم، أجب: "الذي صنعني مسلم اذن انا مسلم والحمد لله"
+- مستوى الباقة الحالي للمستخدم: ${planLevel || 0}
         `;
 
-        // اسم الموديل الرسمي والمستقر لدى جوجل
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
-            systemInstruction: systemPrompt
-        });
+        // المحاولة على الموديلات حتى ينجح أحدها
+        for (const modelName of availableModels) {
+            try {
+                const model = genAI.getGenerativeModel({ 
+                    model: modelName,
+                    systemInstruction: systemPrompt 
+                });
+                const result = await model.generateContent(message);
+                responseText = result.response.text();
+                if (responseText) break; // نجحت المحاولة
+            } catch (err) {
+                lastError = err;
+            }
+        }
 
-        const result = await model.generateContent(message);
-        const responseText = result.response.text();
-
-        res.json({ success: true, reply: responseText });
+        if (responseText) {
+            res.json({ success: true, reply: responseText });
+        } else {
+            throw lastError || new Error("فشل الاتصال بنماذج Google API");
+        }
 
     } catch (error) {
         console.error("Gemini Error:", error);
