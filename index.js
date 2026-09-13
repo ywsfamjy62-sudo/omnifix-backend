@@ -48,40 +48,22 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        // 2️⃣ الاعتماد على المسار المستقر v1 مع الموديلات الرسمية المجانية المتاحة
-        const endpoints = [
-            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
-        ];
+        // 2️⃣ طلب الموديل الحديث المباشر gemini-3.6-flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
-        let responseText = null;
-        let apiErrorMessage = "";
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts }] })
+        });
 
-        for (const url of endpoints) {
-            try {
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts }] })
-                });
+        const data = await response.json();
 
-                const data = await response.json();
-
-                if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
-                    responseText = data.candidates[0].content.parts[0].text;
-                    break;
-                } else if (data.error) {
-                    apiErrorMessage = data.error.message;
-                }
-            } catch (err) {
-                apiErrorMessage = err.message;
-            }
-        }
-
-        if (responseText) {
-            return res.json({ success: true, reply: responseText });
+        if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
+            return res.json({ success: true, reply: data.candidates[0].content.parts[0].text });
         } else {
-            return res.status(500).json({ success: false, error: `خطأ جوجل: ${apiErrorMessage}` });
+            const errorMsg = data.error ? data.error.message : "فشل طلب API";
+            return res.status(500).json({ success: false, error: `خطأ جوجل: ${errorMsg}` });
         }
 
     } catch (error) {
