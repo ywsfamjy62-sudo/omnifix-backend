@@ -29,7 +29,7 @@ app.post('/api/chat', async (req, res) => {
         if (!apiKey) {
             return res.status(500).json({ 
                 success: false, 
-                error: "مفتاح GEMINI_API_KEY غير معرف في متغيّرات البيئة (Environment Variables) على Render." 
+                error: "مفتاح GEMINI_API_KEY غير معرف على Render." 
             });
         }
 
@@ -48,33 +48,40 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        // استخدام الموديلات الرسمية والمجانية المستقرة
-        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        // 2️⃣ الاعتماد على المسار المستقر v1 مع الموديلات الرسمية المجانية المتاحة
+        const endpoints = [
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+        ];
+
         let responseText = null;
         let apiErrorMessage = "";
 
-        for (const model of models) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts }] })
-            });
+        for (const url of endpoints) {
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts }] })
+                });
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
-                responseText = data.candidates[0].content.parts[0].text;
-                break;
-            } else {
-                apiErrorMessage = data.error ? data.error.message : "فشل طلب API";
+                if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
+                    responseText = data.candidates[0].content.parts[0].text;
+                    break;
+                } else if (data.error) {
+                    apiErrorMessage = data.error.message;
+                }
+            } catch (err) {
+                apiErrorMessage = err.message;
             }
         }
 
         if (responseText) {
             return res.json({ success: true, reply: responseText });
         } else {
-            return res.status(500).json({ success: false, error: `خطأ من جوجل: ${apiErrorMessage}` });
+            return res.status(500).json({ success: false, error: `خطأ جوجل: ${apiErrorMessage}` });
         }
 
     } catch (error) {
