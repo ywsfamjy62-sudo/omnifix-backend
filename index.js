@@ -15,7 +15,7 @@ app.post('/api/chat', async (req, res) => {
 
         const cleanMsg = (message || "").trim().toLowerCase();
 
-        // 1️⃣ إجابات فورية بدون الاتصال بجوجل
+        // 1️⃣ إجابات فورية لأسئلة الهوية والدين
         if (cleanMsg.includes("من انت") || cleanMsg.includes("من أنت")) {
             return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل" });
         }
@@ -24,8 +24,15 @@ app.post('/api/chat', async (req, res) => {
             return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله" });
         }
 
-        // تجهيز بيانات الطلب المباشر لـ API
         const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            return res.status(500).json({ 
+                success: false, 
+                error: "مفتاح GEMINI_API_KEY غير معرف في متغيّرات البيئة (Environment Variables) على Render." 
+            });
+        }
+
         const systemPrompt = `أنت المساعد الذكي OmniFix (OmniFix AI). مستوى الباقة الحالي: ${planLevel || 0}.`;
 
         let parts = [{ text: `${systemPrompt}\n\nالمستخدم: ${message || ""}` }];
@@ -41,9 +48,10 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        // 2️⃣ الاتصال المباشر بـ REST API بأسماء الموديلات الرسمية
-        const models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-1.5-flash"];
+        // استخدام الموديلات الرسمية والمجانية المستقرة
+        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let responseText = null;
+        let apiErrorMessage = "";
 
         for (const model of models) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -54,16 +62,19 @@ app.post('/api/chat', async (req, res) => {
             });
 
             const data = await response.json();
+
             if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
                 responseText = data.candidates[0].content.parts[0].text;
                 break;
+            } else {
+                apiErrorMessage = data.error ? data.error.message : "فشل طلب API";
             }
         }
 
         if (responseText) {
             return res.json({ success: true, reply: responseText });
         } else {
-            return res.status(500).json({ success: false, error: "فشل الاتصال مع موديلات جوجل، تحقق من مفتاح API Key" });
+            return res.status(500).json({ success: false, error: `خطأ من جوجل: ${apiErrorMessage}` });
         }
 
     } catch (error) {
