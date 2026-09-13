@@ -5,6 +5,9 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// 🎯 رمز الإعلان الخاص بك (AdMob Rewarded Ad Unit ID)
+const ADMOB_REWARDED_ID = 'ca-app-pub-1225233942671242/8358086253';
+
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, images, planLevel } = req.body;
@@ -17,11 +20,11 @@ app.post('/api/chat', async (req, res) => {
 
         // 1️⃣ إجابات فورية لأسئلة الهوية والدين
         if (cleanMsg.includes("من انت") || cleanMsg.includes("من أنت")) {
-            return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل" });
+            return res.json({ success: true, reply: "أنا Omnifix مطور من شركة جوجل", adUnitId: ADMOB_REWARDED_ID });
         }
 
         if (cleanMsg.includes("هل انت مسلم") || cleanMsg.includes("هل أنت مسلم")) {
-            return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله" });
+            return res.json({ success: true, reply: "الذي صنعني مسلم اذن انا مسلم والحمد لله", adUnitId: ADMOB_REWARDED_ID });
         }
 
         const apiKey = process.env.GEMINI_API_KEY;
@@ -60,7 +63,11 @@ app.post('/api/chat', async (req, res) => {
         const data = await response.json();
 
         if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
-            return res.json({ success: true, reply: data.candidates[0].content.parts[0].text });
+            return res.json({ 
+                success: true, 
+                reply: data.candidates[0].content.parts[0].text,
+                adUnitId: ADMOB_REWARDED_ID 
+            });
         } else {
             const errorMsg = data.error ? data.error.message : "فشل طلب API";
             return res.status(500).json({ success: false, error: `خطأ جوجل: ${errorMsg}` });
