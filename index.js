@@ -1,36 +1,33 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const app = express();
+const cors = require('cors');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+const app = express();
+app.use(cors());
 app.use(express.json());
 
-// تهيئة API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-app.post('/chat', async (req, res) => {
-  const { message, plan } = req.body;
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message } = req.body;
 
-  // اختيار النموذج بناءً على الباقة المختارة
-  let modelName = 'gemini-1.5-flash';
-  if (plan === 'pro' || plan === 'ultra') {
-    modelName = 'gemini-1.5-pro';
-  }
+        if (!message) {
+            return res.status(400).json({ success: false, error: "الرسالة فارغة" });
+        }
 
-  try {
-    const model = genAI.getGenerativeModel({ model: modelName });
-    const result = await model.generateContent(message);
-    const response = await result.response;
-    const text = response.text();
-    
-    return res.json({ reply: text });
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    
-    // إرجاع رسالة عربية راقية عند حدوث ضغط أو خطأ
-    return res.status(500).json({ 
-      reply: "الخدمة تشهد إقبالاً كبيراً حالياً. يرجى إعادة المحاولة بعد لحظات قليلة." 
-    });
-  }
+        // اسم الموديل المحدث المطلوب من جوجل
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+
+        const result = await model.generateContent(message);
+        const responseText = result.response.text();
+
+        res.json({ success: true, reply: responseText });
+
+    } catch (error) {
+        console.error("Gemini Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
