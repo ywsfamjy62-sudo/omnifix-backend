@@ -1,59 +1,29 @@
-// Function to send message and get response from backend
-async function sendMessage() {
-    const inputField = document.getElementById('user-input');
-    const chatBox = document.getElementById('chat-box');
-    const userMessage = inputField.value.trim();
+const express = require('express');
+const cors = require('cors');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-    if (!userMessage) return;
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    // 1. Display user message in chat
-    appendMessage('user', userMessage);
-    inputField.value = '';
+// Initialize Gemini API
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // 2. Display loading indicator
-    const loadingId = appendMessage('bot', 'جاري التفكير...');
-
+app.post('/api/chat', async (req, res) => {
     try {
-        // 3. Send request to your Express Server API endpoint
-        const response = await fetch('http://localhost:3000/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ message: userMessage })
-        });
-
-        const data = await response.json();
-
-        // 4. Update bot message with AI response
-        updateMessage(loadingId, data.reply || 'عذراً، لم أتمكن من الحصول على رد.');
-
+        const { message } = req.body;
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(message);
+        const response = await result.response;
+        res.json({ reply: response.text() });
     } catch (error) {
-        console.error('Error:', error);
-        updateMessage(loadingId, 'حدث خطأ في الاتصال بالسيرفر. التأكد من تشغيل السيرفر.');
+        console.error(error);
+        res.status(500).json({ reply: "حدث خطأ في الاتصال بالذكاء الاصطناعي." });
     }
-}
+});
 
-// Helper function to append message to UI
-function appendMessage(sender, text) {
-    const chatBox = document.getElementById('chat-box');
-    const msgDiv = document.createElement('div');
-    const msgId = 'msg-' + Date.now();
-    
-    msgDiv.id = msgId;
-    msgDiv.className = `message ${sender}-message`;
-    msgDiv.innerText = text;
-    
-    chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    
-    return msgId;
-}
-
-// Helper function to update existing message
-function updateMessage(id, text) {
-    const msgDiv = document.getElementById(id);
-    if (msgDiv) {
-        msgDiv.innerText = text;
-    }
-}
+// Important for Render deployment
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
