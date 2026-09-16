@@ -1,35 +1,32 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// أدخل مفتاحك هنا مباشرة بين التنصيص
-const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6KrKPmY32sbjnd_grplIm26VkaKvqmKQzeRoGfY3s2nzw"; 
-const genAI = new GoogleGenerativeAI(API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
     try {
         const { message } = req.body;
-        
+
         if (!message) {
-            return res.status(400).json({ reply: "يرجى كتابة رسالة." });
+            return res.status(400).json({ success: false, error: "الرسالة فارغة" });
         }
 
-        // استخدام اسم الموديل المستقر
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        
+        // اسم الموديل المحدث المطلوب من جوجل
+        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+
         const result = await model.generateContent(message);
-        const response = await result.response;
-        const text = response.text();
+        const responseText = result.response.text();
 
-        res.json({ reply: text });
+        res.json({ success: true, reply: responseText });
 
-    } catch (err) {
-        console.error("تفاصيل الخطأ:", err);
-        res.status(500).json({ reply: "حدث خطأ في الخادم: " + (err.message || "تعذر الاتصال") });
+    } catch (error) {
+        console.error("Gemini Error:", error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
