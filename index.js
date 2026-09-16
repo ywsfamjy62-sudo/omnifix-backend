@@ -1,56 +1,49 @@
-async function sendMessage() {
-    const inputField = document.getElementById('user-input');
-    const chatBox = document.getElementById('chat-box');
-    const userMessage = inputField.value.trim();
+const express = require('express');
+const cors = require('cors');
 
-    if (!userMessage) return;
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    // 1. عرض رسالة المستخدم
-    appendMessage('user', userMessage);
-    inputField.value = '';
+// مفتاح Gemini API الخاص بك
+const GEMINI_API_KEY = "AQ.Ab8RN6Llpxufv_l3rkFL0n_INposnID-ISQNGKsIs6VsDZrGCQ";
 
-    // 2. عرض مؤشر التفكير
-    const loadingId = appendMessage('bot', 'جاري التفكير...');
-
+app.post('/api/chat', async (req, res) => {
     try {
-        // 3. الاتصال بسيرفر Render المباشر الخاص بك
-        const response = await fetch('https://express-hello-world-eyyz.onrender.com/api/chat', {
+        const { message } = req.body;
+
+        if (!GEMINI_API_KEY) {
+            return res.status(500).json({ reply: "خطأ: لم يتم وضع مفتاح API داخل السيرفر." });
+        }
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ message: userMessage })
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: message }]
+                }]
+            })
         });
 
         const data = await response.json();
 
-        // 4. عرض رد الذكاء الاصطناعي
-        updateMessage(loadingId, data.reply || 'عذراً، لم أتمكن من الحصول على رد.');
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            res.json({ reply: data.candidates[0].content.parts[0].text });
+        } else {
+            console.error('Gemini Error Response:', data);
+            res.status(500).json({ reply: "تعذر الحصول على رد من الذكاء الاصطناعي." });
+        }
 
     } catch (error) {
-        console.error('Error:', error);
-        updateMessage(loadingId, 'حدث خطأ في الاتصال بالسيرفر.');
+        console.error('Server Error:', error);
+        res.status(500).json({ reply: "حدث خطأ في الاتصال بالسيرفر." });
     }
-}
+});
 
-function appendMessage(sender, text) {
-    const chatBox = document.getElementById('chat-box');
-    const msgDiv = document.createElement('div');
-    const msgId = 'msg-' + Date.now();
-    
-    msgDiv.id = msgId;
-    msgDiv.className = `message ${sender}-message`;
-    msgDiv.innerText = text;
-    
-    chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    
-    return msgId;
-}
-
-function updateMessage(id, text) {
-    const msgDiv = document.getElementById(id);
-    if (msgDiv) {
-        msgDiv.innerText = text;
-    }
-}
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
