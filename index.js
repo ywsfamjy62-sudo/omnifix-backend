@@ -1,34 +1,59 @@
-const express = require('express');
-const cors = require('cors');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+// Function to send message and get response from backend
+async function sendMessage() {
+    const inputField = document.getElementById('user-input');
+    const chatBox = document.getElementById('chat-box');
+    const userMessage = inputField.value.trim();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+    if (!userMessage) return;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // 1. Display user message in chat
+    appendMessage('user', userMessage);
+    inputField.value = '';
 
-app.post('/api/chat', async (req, res) => {
+    // 2. Display loading indicator
+    const loadingId = appendMessage('bot', 'جاري التفكير...');
+
     try {
-        const { message } = req.body;
+        // 3. Send request to your Express Server API endpoint
+        const response = await fetch('http://localhost:3000/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: userMessage })
+        });
 
-        if (!message) {
-            return res.status(400).json({ success: false, error: "الرسالة فارغة" });
-        }
+        const data = await response.json();
 
-        // اسم الموديل المحدث المطلوب من جوجل
-        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
-
-        const result = await model.generateContent(message);
-        const responseText = result.response.text();
-
-        res.json({ success: true, reply: responseText });
+        // 4. Update bot message with AI response
+        updateMessage(loadingId, data.reply || 'عذراً، لم أتمكن من الحصول على رد.');
 
     } catch (error) {
-        console.error("Gemini Error:", error);
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Error:', error);
+        updateMessage(loadingId, 'حدث خطأ في الاتصال بالسيرفر. التأكد من تشغيل السيرفر.');
     }
-});
+}
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Helper function to append message to UI
+function appendMessage(sender, text) {
+    const chatBox = document.getElementById('chat-box');
+    const msgDiv = document.createElement('div');
+    const msgId = 'msg-' + Date.now();
+    
+    msgDiv.id = msgId;
+    msgDiv.className = `message ${sender}-message`;
+    msgDiv.innerText = text;
+    
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    return msgId;
+}
+
+// Helper function to update existing message
+function updateMessage(id, text) {
+    const msgDiv = document.getElementById(id);
+    if (msgDiv) {
+        msgDiv.innerText = text;
+    }
+}
