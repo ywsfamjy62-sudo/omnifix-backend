@@ -1,50 +1,56 @@
-const express = require('express');
-const cors = require('cors');
+async function sendMessage() {
+    const inputField = document.getElementById('user-input');
+    const chatBox = document.getElementById('chat-box');
+    const userMessage = inputField.value.trim();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+    if (!userMessage) return;
 
-// مسار استقبال الرسائل
-app.post('/api/chat', async (req, res) => {
+    // 1. عرض رسالة المستخدم
+    appendMessage('user', userMessage);
+    inputField.value = '';
+
+    // 2. عرض مؤشر التفكير
+    const loadingId = appendMessage('bot', 'جاري التفكير...');
+
     try {
-        const { message } = req.body;
-        const apiKey = process.env.GEMINI_API_KEY;
-
-        if (!apiKey) {
-            return res.status(500).json({ reply: "خطأ: لم يتم ضبط مفتاح GEMINI_API_KEY في السيرفر." });
-        }
-
-        // الاتصال المباشر بـ Gemini API
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // 3. الاتصال بسيرفر Render المباشر الخاص بك
+        const response = await fetch('https://express-hello-world-eyyz.onrender.com/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: message }]
-                }]
-            })
+            body: JSON.stringify({ message: userMessage })
         });
 
         const data = await response.json();
 
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-            const botReply = data.candidates[0].content.parts[0].text;
-            res.json({ reply: botReply });
-        } else {
-            res.status(500).json({ reply: "تعذر معالجة الرد من الذكاء الاصطناعي." });
-        }
+        // 4. عرض رد الذكاء الاصطناعي
+        updateMessage(loadingId, data.reply || 'عذراً، لم أتمكن من الحصول على رد.');
 
     } catch (error) {
-        console.error('Server Error:', error);
-        res.status(500).json({ reply: "حدث خطأ أثناء الاتصال بالسيرفر." });
+        console.error('Error:', error);
+        updateMessage(loadingId, 'حدث خطأ في الاتصال بالسيرفر.');
     }
-});
+}
 
-// تحديد البورت المتوافق مع Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+function appendMessage(sender, text) {
+    const chatBox = document.getElementById('chat-box');
+    const msgDiv = document.createElement('div');
+    const msgId = 'msg-' + Date.now();
+    
+    msgDiv.id = msgId;
+    msgDiv.className = `message ${sender}-message`;
+    msgDiv.innerText = text;
+    
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    return msgId;
+}
+
+function updateMessage(id, text) {
+    const msgDiv = document.getElementById(id);
+    if (msgDiv) {
+        msgDiv.innerText = text;
+    }
+}
