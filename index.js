@@ -5,7 +5,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// قراءة المفتاح تلقائياً من متغيرات بيئة Vercel
+// قراءة المفتاح تلقائياً من متغيرات Vercel
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.get('/', (req, res) => {
@@ -31,7 +31,8 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        // تم تحديث النموذج إلى gemini-3.6-flash
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const response = await fetch(url, {
             method: 'POST',
