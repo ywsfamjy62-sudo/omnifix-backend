@@ -5,10 +5,11 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-const GEMINI_API_KEY = "AQ.Ab8RN6Llpxufv_l3rkFL0n_INposnID-ISQNGKsIs6VsDZrGCQ";
+// قراءة المفتاح تلقائياً من متغيرات بيئة Vercel
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.get('/', (req, res) => {
-    res.send('OmniFix AI Server is active!');
+    res.send('Server is running successfully!');
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -30,7 +31,7 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -43,11 +44,12 @@ app.post('/api/chat', async (req, res) => {
         if (data.candidates && data.candidates[0] && data.candidates[0].content) {
             res.json({ reply: data.candidates[0].content.parts[0].text });
         } else {
-            res.status(400).json({ reply: data.error?.message || "خطأ من سيرفر جوجل" });
+            const errorMsg = data.error?.message || JSON.stringify(data);
+            res.status(400).json({ reply: `خطأ من Google API: ${errorMsg}` });
         }
 
     } catch (error) {
-        res.status(500).json({ reply: "حدث خطأ في الاتصال بالسيرفر." });
+        res.status(500).json({ reply: `خطأ في السيرفر: ${error.message}` });
     }
 });
 
