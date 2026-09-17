@@ -5,11 +5,10 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// مفتاح API الخاص بك
 const GEMINI_API_KEY = "AQ.Ab8RN6Llpxufv_l3rkFL0n_INposnID-ISQNGKsIs6VsDZrGCQ";
 
 app.get('/', (req, res) => {
-    res.send('Server is running successfully!');
+    res.send('OmniFix AI Server is active!');
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -17,9 +16,7 @@ app.post('/api/chat', async (req, res) => {
         const { message, images } = req.body;
 
         const parts = [];
-        if (message) {
-            parts.push({ text: message });
-        }
+        if (message) parts.push({ text: message });
 
         if (images && images.length > 0) {
             images.forEach(imgBase64 => {
@@ -33,7 +30,6 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        // اسم الموديل المعتمد والمستقر لدى جوجل: gemini-1.5-flash
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const response = await fetch(url, {
@@ -45,20 +41,14 @@ app.post('/api/chat', async (req, res) => {
         const data = await response.json();
 
         if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-            const botReply = data.candidates[0].content.parts[0].text;
-            res.json({ reply: botReply });
+            res.json({ reply: data.candidates[0].content.parts[0].text });
         } else {
-            console.error('Google API Error:', data);
-            res.status(400).json({ reply: data.error?.message || "تعذر الحصول على رد من الذكاء الاصطناعي." });
+            res.status(400).json({ reply: data.error?.message || "خطأ من سيرفر جوجل" });
         }
 
     } catch (error) {
-        console.error('Server Internal Error:', error);
         res.status(500).json({ reply: "حدث خطأ في الاتصال بالسيرفر." });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;
