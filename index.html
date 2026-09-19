@@ -2,171 +2,150 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>OmniFix AI</title>
   <style>
     :root {
       --bg-color: #090d16;
       --chat-bg: #111827;
-      --card-bg: rgba(31, 41, 55, 0.7);
+      --card-bg: rgba(31, 41, 55, 0.8);
       --text-color: #f3f4f6;
       --text-sub: #9ca3af;
       --accent-color: #2563eb;
-      --accent-hover: #1d4ed8;
       --user-msg: #2563eb;
       --bot-msg: #1f2937;
-      --sidebar-bg: #030712;
+      --sidebar-bg: #0d1322;
       --border-color: #374151;
     }
 
     .light-mode {
       --bg-color: #f3f4f6;
       --chat-bg: #ffffff;
-      --card-bg: rgba(243, 244, 246, 0.8);
+      --card-bg: rgba(243, 244, 246, 0.9);
       --text-color: #111827;
       --text-sub: #4b5563;
       --accent-color: #2563eb;
-      --accent-hover: #1d4ed8;
       --user-msg: #2563eb;
       --bot-msg: #e5e7eb;
       --sidebar-bg: #e5e7eb;
       --border-color: #d1d5db;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; transition: background 0.3s; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 
+    /* القائمة الجانبية مصلحة للموبايل */
     .sidebar {
-      width: 280px; background-color: var(--sidebar-bg); padding: 20px; display: flex; flex-direction: column; gap: 15px;
-      position: fixed; top: 0; bottom: 0; right: -280px; transition: right 0.3s ease; z-index: 1000; border-left: 1px solid var(--border-color);
-      box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+      width: 280px; max-width: 80vw; background-color: var(--sidebar-bg); padding: 15px; display: flex; flex-direction: column; gap: 12px;
+      position: fixed; top: 0; bottom: 0; right: -100%; transition: all 0.3s ease; z-index: 1001; border-left: 1px solid var(--border-color);
     }
-    body.ltr .sidebar { right: auto; left: -280px; transition: left 0.3s ease; border-left: none; border-right: 1px solid var(--border-color); }
+    body[dir="ltr"] .sidebar { right: auto; left: -100%; border-left: none; border-right: 1px solid var(--border-color); }
+    
     .sidebar.open { right: 0; }
-    body.ltr .sidebar.open { left: 0; }
+    body[dir="ltr"] .sidebar.open { left: 0; }
 
     .new-btn {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 12px; border-radius: 10px;
-      cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: transform 0.2s;
+      background: #2563eb; color: white; border: none; padding: 12px; border-radius: 10px;
+      cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .new-btn:hover { transform: scale(1.02); }
 
-    .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .history-item-container { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 6px 12px; border: 1px solid transparent; }
-    .history-item-container:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-color); }
-    .history-item { flex: 1; cursor: pointer; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .delete-chat-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 4px; }
+    .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .history-item-container { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px; }
+    .history-item { flex: 1; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; font-size: 14px; }
 
-    .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
+    /* الشاشة الرئيسية */
+    .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; width: 100%; position: relative; }
 
     header {
-      background-color: var(--chat-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border-color); backdrop-filter: blur(10px);
+      background-color: var(--chat-bg); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-color); height: 60px;
     }
 
-    .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .icon-btn:hover { background: rgba(255,255,255,0.15); }
+    .icon-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
 
-    .chat-container { flex: 1; position: relative; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+    .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
 
-    .hero-welcome {
-      margin: auto; text-align: center; max-width: 500px; z-index: 2; padding: 30px;
-      background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border-color);
-      backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .hero-welcome h1 { font-size: 28px; margin-bottom: 10px; background: linear-gradient(90deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .hero-welcome p { color: var(--text-sub); font-size: 15px; line-height: 1.6; }
+    .hero-welcome { margin: auto; text-align: center; max-width: 90%; padding: 20px; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--border-color); }
+    .hero-welcome h1 { font-size: 24px; color: #3b82f6; margin-bottom: 8px; }
+    .hero-welcome p { color: var(--text-sub); font-size: 13px; }
 
-    .message { max-width: 75%; padding: 14px 18px; border-radius: 16px; line-height: 1.6; font-size: 15px; word-break: break-word; z-index: 2; }
+    .message { max-width: 85%; padding: 12px 15px; border-radius: 14px; line-height: 1.5; font-size: 14px; word-break: break-word; }
     .user { background-color: var(--user-msg); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    body[dir="ltr"] .user { align-self: flex-end; border-bottom-right-radius: 14px; border-bottom-left-radius: 2px; }
     .bot { background-color: var(--bot-msg); color: var(--text-color); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--border-color); }
-    .preview-media { max-width: 220px; max-height: 200px; border-radius: 10px; margin-top: 8px; display: block; border: 1px solid var(--border-color); }
+    body[dir="ltr"] .bot { align-self: flex-start; border-bottom-left-radius: 14px; border-bottom-right-radius: 2px; }
 
-    .input-container { padding: 15px 20px; background: var(--chat-bg); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; z-index: 5; }
-    .input-container input[type="text"] { flex: 1; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 15px; outline: none; }
-    .input-container button { padding: 14px 20px; background: var(--accent-color); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .add-media-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px 16px; border-radius: 12px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; margin-top: 8px; }
+    .media-grid img, .media-grid video { width: 100%; height: 80px; object-fit: cover; border-radius: 6px; }
 
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(8px); }
+    /* منطقة الإدخال والمعاينة */
+    #mediaPreviewArea { display: none; padding: 10px; background: var(--chat-bg); border-top: 1px solid var(--border-color); gap: 8px; overflow-x: auto; }
+    .preview-item { position: relative; display: inline-block; flex-shrink: 0; }
+    .preview-item img, .preview-item video { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    .remove-media { position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; }
+
+    .input-container { padding: 10px 12px; background: var(--chat-bg); border-top: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center; }
+    .input-container input[type="text"] { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 14px; outline: none; }
+    .input-container button { padding: 10px 15px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    .add-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 12px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+
+    /* النافذة المنبثقة للباقات مضبوطة تماماً */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 10px; }
     .modal.active { display: flex; }
-    .modal-content { background: var(--chat-bg); width: 95%; max-width: 1100px; padding: 25px; border-radius: 20px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
-    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
-    
-    .plan-card { 
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; text-align: center;
-      display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;
-    }
-    .plan-card:hover { transform: translateY(-3px); border-color: var(--accent-color); }
-    .plan-card.active-plan { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
-    .plan-card.special-plan { border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+    .modal-content { background: var(--chat-bg); width: 100%; max-width: 600px; padding: 15px; border-radius: 15px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
+    .plan-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+    .plan-card.active-plan { border-color: #10b981; }
 
-    .plan-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; }
-    .plan-ads { font-size: 18px; font-weight: bold; color: #f59e0b; margin-bottom: 12px; }
-    .plan-features { list-style: none; text-align: right; font-size: 12px; color: var(--text-sub); margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
-    body.ltr .plan-features { text-align: left; }
-    .plan-btn { padding: 10px; background: var(--accent-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
-
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 999; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1000; }
     .overlay.active { display: block; }
-
-    #mediaPreviewContainer { display: none; padding: 10px 20px; background: var(--chat-bg); border-top: 1px solid var(--border-color); align-items: center; gap: 10px; }
-    #mediaPreviewContainer img, #mediaPreviewContainer video { max-height: 60px; border-radius: 8px; }
   </style>
 </head>
 <body>
 
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-  <!-- القائمة الجانبية -->
   <div class="sidebar" id="sidebar">
-    <button class="new-btn" onclick="startNewChat()">
-      <span>+</span> <span id="lbl-new-chat">محادثة جديدة</span>
-    </button>
-    
-    <div style="font-size:12px; color:var(--text-sub); margin-top:10px;" id="lbl-history">سجل المحادثات:</div>
+    <button class="new-btn" onclick="startNewChat()"><span>+</span> <span id="lbl-new-chat">محادثة جديدة</span></button>
+    <div style="font-size:12px; color:var(--text-sub);" id="lbl-history">سجل المحادثات:</div>
     <div class="history-list" id="historyList"></div>
 
-    <button onclick="openPlans()" class="icon-btn" style="background: linear-gradient(90deg, #eab308, #ca8a04); color:black; border:none;" id="lbl-plans-btn">👑 عرض الباقات (30)</button>
+    <button onclick="openPlans()" class="icon-btn" style="background: #eab308; color:black; font-weight:bold;" id="lbl-plans-btn">👑 الباقات (30)</button>
     <button onclick="toggleTheme()" class="icon-btn" id="lbl-theme">🌙 الوضع الليلي</button>
     <button onclick="toggleLanguage()" class="icon-btn" id="lbl-lang">🌐 English</button>
   </div>
 
-  <!-- الشاشة الرئيسية -->
   <div class="main-content">
     <header>
       <button class="icon-btn" onclick="toggleSidebar()">☰</button>
-      <h2 style="font-size:18px; letter-spacing: 1px;">OmniFix <span style="color:var(--accent-color);">AI</span></h2>
-      <button onclick="openPlans()" class="icon-btn" style="font-size:12px;">👑 <span id="lbl-top-plan">الباقة 1</span></button>
+      <h3 style="font-size:16px;">OmniFix <span style="color:#2563eb;">AI</span></h3>
+      <button onclick="openPlans()" class="icon-btn">👑 <span id="lbl-top-plan">الباقة 1</span></button>
     </header>
 
     <div class="chat-container" id="chatContainer">
       <div class="hero-welcome" id="heroWelcome">
         <h1 id="hero-title">OmniFix AI</h1>
-        <p id="hero-desc">المساعد الذكي للدردشة والمحادثة النصية فقط.</p>
+        <p id="hero-desc">المساعد الذكي للدردشة والمحادثة النصية والوسائط.</p>
       </div>
     </div>
 
-    <!-- معاينة الصور والفيديوهات المرفقة -->
-    <div id="mediaPreviewContainer">
-      <span id="previewElement"></span>
-      <button class="delete-chat-btn" onclick="clearMediaAttachment()">✕</button>
-    </div>
+    <!-- شريط معاينة الـ 10 صور/فيديوهات -->
+    <div id="mediaPreviewArea"></div>
 
     <div class="input-container">
-      <!-- زر الزائد للإرفاق -->
-      <button class="add-media-btn" title="إضافة صورة أو فيديو" onclick="document.getElementById('fileInput').click()">+</button>
-      <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" onchange="handleFileSelect(event)">
+      <button class="add-btn" onclick="document.getElementById('fileInput').click()">+</button>
+      <!-- إضافة خاصية multiple للسماح بـ 10 صور/فيديوهات -->
+      <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;" onchange="handleFilesSelect(event)">
       <input type="text" id="userInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter') sendMessage()">
       <button onclick="sendMessage()" id="sendBtn">إرسال</button>
     </div>
   </div>
 
-  <!-- نافذة الباقات 30 -->
   <div class="modal" id="plansModal">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="modal-title">اختر من بين 30 باقة متاحة</h2>
+        <h4 id="modal-title">اختر من بين 30 باقة متاحة</h4>
         <button onclick="closePlans()" class="icon-btn">✕</button>
       </div>
       <div class="plans-grid" id="plansGrid"></div>
@@ -177,77 +156,38 @@
     let currentLang = 'ar';
     let chats = JSON.parse(localStorage.getItem('omnifix_chats') || '[]');
     let currentChatId = null;
-    let selectedMediaBase64 = null;
-    let selectedMediaType = null;
+    let selectedFiles = []; // قائمة تخزين حتى 10 ملفات
 
     const i18n = {
       ar: {
-        newChat: "+ محادثة جديدة",
-        history: "سجل المحادثات:",
-        plans: "👑 عرض الباقات (30)",
-        themeNight: "🌙 الوضع الليلي",
-        themeDay: "☀️ الوضع النهاري",
-        placeholder: "اكتب رسالتك هنا...",
-        send: "إرسال",
-        heroTitle: "OmniFix AI",
-        heroDesc: "المساعد الذكي للدردشة والمحادثة النصية فقط.",
-        thinking: "جاري التفكير والإجابة...",
-        topPlan: "الباقة 1",
-        modalTitle: "اختر من بين 30 باقة متاحة",
-        watchAd: "🎬 شاهد الإعلانات لفتح الباقة",
-        currentBtn: "الباقة الحالية"
+        newChat: "+ محادثة جديدة", history: "سجل المحادثات:", plans: "👑 الباقات (30)",
+        themeNight: "🌙 الوضع الليلي", themeDay: "☀️ الوضع النهاري", placeholder: "اكتب رسالتك هنا...",
+        send: "إرسال", heroTitle: "OmniFix AI", heroDesc: "المساعد الذكي للدردشة المحسنة.",
+        thinking: "جاري التفكير...", topPlan: "الباقة 1", modalTitle: "اختر من بين 30 باقة",
+        watchAd: "شاهد الإعلانات", currentBtn: "الباقة الحالية"
       },
       en: {
-        newChat: "+ New Chat",
-        history: "Chat History:",
-        plans: "👑 View Plans (30)",
-        themeNight: "🌙 Dark Mode",
-        themeDay: "☀️ Light Mode",
-        placeholder: "Type your message here...",
-        send: "Send",
-        heroTitle: "OmniFix AI",
-        heroDesc: "AI assistant for text chat only.",
-        thinking: "Thinking & Responding...",
-        topPlan: "Plan 1",
-        modalTitle: "Choose from 30 Available Plans",
-        watchAd: "🎬 Watch Ads to Unlock",
-        currentBtn: "Current Plan"
+        newChat: "+ New Chat", history: "Chat History:", plans: "👑 Plans (30)",
+        themeNight: "🌙 Dark Mode", themeDay: "☀️ Light Mode", placeholder: "Type your message here...",
+        send: "Send", heroTitle: "OmniFix AI", heroDesc: "Smart AI Assistant.",
+        thinking: "Thinking...", topPlan: "Plan 1", modalTitle: "Choose from 30 Plans",
+        watchAd: "Watch Ads", currentBtn: "Current Plan"
       }
     };
 
     function generatePlans() {
       const grid = document.getElementById('plansGrid');
       grid.innerHTML = '';
-      const t = i18n[currentLang];
-
       for (let i = 1; i <= 30; i++) {
-        const adsNeeded = i;
         const card = document.createElement('div');
-        card.className = `plan-card ${i === 1 ? 'active-plan' : ''} ${i === 30 ? 'special-plan' : ''}`;
-        
+        card.className = `plan-card ${i === 1 ? 'active-plan' : ''}`;
         card.innerHTML = `
-          <div>
-            <div class="plan-title">${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`} ${i === 30 ? '🔥' : ''}</div>
-            <div class="plan-ads">🎬 ${adsNeeded} ${currentLang === 'ar' ? (adsNeeded === 1 ? 'إعلان' : 'إعلانات') : 'Ad(s)'}</div>
-            <ul class="plan-features">
-              <li>⚡ ${currentLang === 'ar' ? 'سرعة الرد:' : 'Speed:'} Level ${i}</li>
-              <li>🧠 ${currentLang === 'ar' ? 'دقة وقوة الذكاء:' : 'Intelligence:'} Level ${i}</li>
-              <li>💬 ${currentLang === 'ar' ? 'طول النص المتاح:' : 'Max Answer Length:'} ${i * 500} ${currentLang === 'ar' ? 'كلمة' : 'Words'}</li>
-            </ul>
-          </div>
-          <button class="plan-btn" style="${i === 1 ? 'background:#10b981;' : i === 30 ? 'background: linear-gradient(135deg, #f59e0b, #d97706);' : ''}" onclick="watchAdForPlan(${i}, ${adsNeeded})">
-            ${i === 1 ? t.currentBtn : t.watchAd}
-          </button>
+          <div><strong>${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`}</strong></div>
+          <div style="color:#f59e0b; margin:5px 0;">🎬 ${i} ${currentLang === 'ar' ? 'إعلان' : 'Ad(s)'}</div>
+          <button class="icon-btn" style="width:100%; margin-top:5px;">${i === 1 ? i18n[currentLang].currentBtn : i18n[currentLang].watchAd}</button>
         `;
         grid.appendChild(card);
       }
-    }
-
-    function watchAdForPlan(planNum, ads) {
-      if (planNum === 1) return;
-      alert(currentLang === 'ar' 
-        ? `جاري تشغيل ${ads} إعلان لفتح الباقة ${planNum}...` 
-        : `Loading ${ads} ad(s) to unlock Plan ${planNum}...`);
     }
 
     function toggleSidebar() {
@@ -264,9 +204,7 @@
     function toggleLanguage() {
       currentLang = currentLang === 'ar' ? 'en' : 'ar';
       document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-      if (currentLang === 'en') document.body.classList.add('ltr');
-      else document.body.classList.remove('ltr');
-
+      
       document.getElementById('lbl-lang').innerText = currentLang === 'ar' ? '🌐 English' : '🌐 العربية';
       applyTranslations();
       generatePlans();
@@ -292,17 +230,13 @@
 
     function startNewChat() {
       currentChatId = Date.now();
-      const newChatObj = { id: currentChatId, title: currentLang === 'ar' ? 'محادثة جديدة' : 'New Chat', messages: [] };
-      chats.unshift(newChatObj);
-      saveChats();
-      renderHistory();
-      clearChatBox();
+      chats.unshift({ id: currentChatId, title: currentLang === 'ar' ? 'محادثة جديدة' : 'New Chat', messages: [] });
+      saveChats(); renderHistory(); clearChatBox();
       if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
     }
 
     function clearChatBox() {
-      const container = document.getElementById('chatContainer');
-      container.innerHTML = `
+      document.getElementById('chatContainer').innerHTML = `
         <div class="hero-welcome" id="heroWelcome">
           <h1>${i18n[currentLang].heroTitle}</h1>
           <p>${i18n[currentLang].heroDesc}</p>
@@ -318,338 +252,18 @@
       chats.forEach(chat => {
         const itemContainer = document.createElement('div');
         itemContainer.className = 'history-item-container';
-
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerText = chat.title;
-        item.onclick = () => loadChat(chat.id);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-chat-btn';
-        deleteBtn.innerHTML = '🗑️';
-        deleteBtn.title = 'حذف المحادثة';
-        deleteBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteChat(chat.id);
-        };
-
-        itemContainer.appendChild(item);
-        itemContainer.appendChild(deleteBtn);
-        list.appendChild(itemContainer);
-      });
-    }
-
-    function deleteChat(id) {
-      chats = chats.filter(c => c.id !== id);
-      saveChats();
-      renderHistory();
-      if (currentChatId === id) {
-        if (chats.length > 0) loadChat(chats[0].id);
-        else startNewChat();
-      }
-    }
-
-    function loadChat(id) {
-      currentChatId = id;
-      const chat = chats.find(c => c.id === id);
-      if (!chat) return;
-
-      clearChatBox();
-      const hero = document.getElementById('heroWelcome');
-      if (hero && chat.messages.length > 0) hero.style.display = 'none';
-
-      chat.messages.forEach(msg => {
-        appendMessageUI(msg.text, msg.sender, msg.mediaUrl, msg.mediaType);
-      });
-      if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
-    }
-
-    function handleFileSelect(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        selectedMediaBase64 = e.target.result;
-        selectedMediaType = file.type.startsWith('image/') ? 'image' : 'video';
-
-        const previewEl = document.getElementById('previewElement');
-        if (selectedMediaType === 'image') {
-          previewEl.innerHTML = `<img src="${selectedMediaBase64}">`;
-        } else {
-          previewEl.innerHTML = `<video src="${selectedMediaBase64}" controls></video>`;
-        }
-        document.getElementById('mediaPreviewContainer').style.display = 'flex';
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearMediaAttachment() {
-      selectedMediaBase64 = null;
-      selectedMediaType = null;
-      document.getElementById('fileInput').value = '';
-      document.getElementById('mediaPreviewContainer').style.display = 'none';
-    }
-
-    function appendMessageUI(text, sender, mediaUrl = null, mediaType = null) {
-      const container = document.getElementById('chatContainer');
-      const hero = document.getElementById('heroWelcome');
-      if (hero) hero.style.display = 'none';
-
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-      
-      let html = text || '';
-      if (mediaUrl) {
-        if (mediaType === 'image') {
-          html += `<br><img src="${mediaUrl}" class="preview-media">`;
-        } else if (mediaType === 'video') {
-          html += `<br><video src="${mediaUrl}" controls class="preview-media"></video>`;
-        }
-      }
-
-      msgDiv.innerHTML = html;
-      container.appendChild(msgDiv);
-      container.scrollTop = container.scrollHeight;
-      return msgDiv;
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById('userInput');
-      const text = input.value.trim();
-      if (!text && !selectedMediaBase64) return;
-
-      if (!currentChatId) {
-        currentChatId = Date.now();
-        chats.unshift({ id: currentChatId, title: text.substring(0, 20) || 'مرفق وسائط', messages: [] });
-      }
-
-      const activeChat = chats.find(c => c.id === currentChatId);
-      if (activeChat && activeChat.messages.length === 0) {
-        activeChat.title = text.substring(0, 20) || 'مرفق وسائط';
-      }
-
-      const currentMedia = selectedMediaBase64;
-      const currentType = selectedMediaType;
-
-      appendMessageUI(text, 'user', currentMedia, currentType);
-      activeChat.messages.push({ text, sender: 'user', mediaUrl: currentMedia, mediaType: currentType });
-      saveChats();
-      renderHistory();
-
-      input.value = '';
-      clearMediaAttachment();
-
-      const loadingEl = appendMessageUI(i18n[currentLang].thinking, 'bot');
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: text,
-            lang: currentLang,
-            media: currentMedia
-          })
-        });
-        const data = await response.json();
-
-        const replyText = data.reply || '...';
-        loadingEl.innerText = replyText;
-        activeChat.messages.push({ text: replyText, sender: 'bot' });
-        saveChats();
-      } catch (err) {
-        loadingEl.innerText = currentLang === 'ar' ? 'حدث خطأ في الاتصال بالسيرفر.' : 'Server connection error.';
-      }
-    }
-
-    generatePlans();
-    if (chats.length > 0) {
-      renderHistory();
-      loadChat(chats[0].id);
-    } else {
-      startNewChat();
-    }
-  </script>
-</body>
-</html>
-er;">
-        <h2 id="modal-title">اختر من بين 30 باقة متاحة</h2>
-        <button onclick="closePlans()" class="icon-btn">✕</button>
-      </div>
-      <div class="plans-grid" id="plansGrid"></div>
-    </div>
-  </div>
-
-  <script>
-    let currentLang = 'ar';
-    let chats = JSON.parse(localStorage.getItem('omnifix_chats') || '[]');
-    let currentChatId = null;
-    let selectedMediaBase64 = null;
-    let selectedMediaType = null;
-
-    const i18n = {
-      ar: {
-        newChat: "+ محادثة جديدة",
-        history: "سجل المحادثات:",
-        plans: "👑 عرض الباقات (30)",
-        themeNight: "🌙 الوضع الليلي",
-        themeDay: "☀️ الوضع النهاري",
-        placeholder: "اكتب رسالتك هنا...",
-        send: "إرسال",
-        heroTitle: "OmniFix AI",
-        heroDesc: "المساعد الذكي المتكامل للدردشة والمحادثة النصية بنقرة واحدة.",
-        thinking: "جاري التفكير والإجابة...",
-        topPlan: "الباقة 1",
-        modalTitle: "اختر من بين 30 باقة متاحة",
-        watchAd: "🎬 شاهد الإعلان لفتح الباقة",
-        currentBtn: "الباقة الحالية"
-      },
-      en: {
-        newChat: "+ New Chat",
-        history: "Chat History:",
-        plans: "👑 View Plans (30)",
-        themeNight: "🌙 Dark Mode",
-        themeDay: "☀️ Light Mode",
-        placeholder: "Type your message here...",
-        send: "Send",
-        heroTitle: "OmniFix AI",
-        heroDesc: "All-in-one AI assistant for instant smart text chat.",
-        thinking: "Thinking & Responding...",
-        topPlan: "Plan 1",
-        modalTitle: "Choose from 30 Available Plans",
-        watchAd: "🎬 Watch Ad to Unlock",
-        currentBtn: "Current Plan"
-      }
-    };
-
-    function generatePlans() {
-      const grid = document.getElementById('plansGrid');
-      grid.innerHTML = '';
-      const t = i18n[currentLang];
-
-      for (let i = 1; i <= 30; i++) {
-        const adsNeeded = i;
-        const card = document.createElement('div');
-        card.className = `plan-card ${i === 1 ? 'active-plan' : ''} ${i === 30 ? 'special-plan' : ''}`;
-        
-        card.innerHTML = `
-          <div>
-            <div class="plan-title">${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`} ${i === 30 ? '🔥' : ''}</div>
-            <div class="plan-ads">🎬 ${adsNeeded} ${currentLang === 'ar' ? (adsNeeded === 1 ? 'إعلان' : 'إعلانات') : 'Ad(s)'}</div>
-            <ul class="plan-features">
-              <li>⚡ ${currentLang === 'ar' ? 'سرعة الإجابة:' : 'Speed:'} Level ${i}</li>
-              <li>🧠 ${currentLang === 'ar' ? 'سعة الذكاء والذاكرة:' : 'Intelligence:'} Level ${i}</li>
-              <li>💬 ${currentLang === 'ar' ? 'طول الأجوبة المتاحة:' : 'Max Answer Length:'} ${i * 500} ${currentLang === 'ar' ? 'كلمة' : 'Words'}</li>
-            </ul>
-          </div>
-          <button class="plan-btn" style="${i === 1 ? 'background:#10b981;' : i === 30 ? 'background: linear-gradient(135deg, #f59e0b, #d97706);' : ''}" onclick="watchAdForPlan(${i}, ${adsNeeded})">
-            ${i === 1 ? t.currentBtn : t.watchAd}
-          </button>
+        itemContainer.innerHTML = `
+          <div class="history-item" onclick="loadChat(${chat.id})">${chat.title}</div>
+          <button class="delete-btn" onclick="deleteChat(event, ${chat.id})">🗑️</button>
         `;
-        grid.appendChild(card);
-      }
-    }
-
-    function watchAdForPlan(planNum, ads) {
-      if (planNum === 1) return;
-      alert(currentLang === 'ar' 
-        ? `جاري تشغيل ${ads} إعلان لفتح الباقة ${planNum}...` 
-        : `Loading ${ads} ad(s) to unlock Plan ${planNum}...`);
-    }
-
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('overlay').classList.toggle('active');
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('light-mode');
-      const isLight = document.body.classList.contains('light-mode');
-      document.getElementById('lbl-theme').innerText = isLight ? i18n[currentLang].themeDay : i18n[currentLang].themeNight;
-    }
-
-    function toggleLanguage() {
-      currentLang = currentLang === 'ar' ? 'en' : 'ar';
-      document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-      if (currentLang === 'en') document.body.classList.add('ltr');
-      else document.body.classList.remove('ltr');
-
-      document.getElementById('lbl-lang').innerText = currentLang === 'ar' ? '🌐 English' : '🌐 العربية';
-      applyTranslations();
-      generatePlans();
-      renderHistory();
-      if(currentChatId) loadChat(currentChatId);
-    }
-
-    function applyTranslations() {
-      const t = i18n[currentLang];
-      document.getElementById('lbl-new-chat').innerText = t.newChat;
-      document.getElementById('lbl-history').innerText = t.history;
-      document.getElementById('lbl-plans-btn').innerText = t.plans;
-      document.getElementById('lbl-top-plan').innerText = t.topPlan;
-      document.getElementById('userInput').placeholder = t.placeholder;
-      document.getElementById('sendBtn').innerText = t.send;
-      document.getElementById('hero-title').innerText = t.heroTitle;
-      document.getElementById('hero-desc').innerText = t.heroDesc;
-      document.getElementById('modal-title').innerText = t.modalTitle;
-    }
-
-    function openPlans() { document.getElementById('plansModal').classList.add('active'); }
-    function closePlans() { document.getElementById('plansModal').classList.remove('active'); }
-
-    function startNewChat() {
-      currentChatId = Date.now();
-      const newChatObj = { id: currentChatId, title: currentLang === 'ar' ? 'محادثة جديدة' : 'New Chat', messages: [] };
-      chats.unshift(newChatObj);
-      saveChats();
-      renderHistory();
-      clearChatBox();
-      if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
-    }
-
-    function clearChatBox() {
-      const container = document.getElementById('chatContainer');
-      container.innerHTML = `
-        <div class="hero-welcome" id="heroWelcome">
-          <h1>${i18n[currentLang].heroTitle}</h1>
-          <p>${i18n[currentLang].heroDesc}</p>
-        </div>
-      `;
-    }
-
-    function saveChats() { localStorage.setItem('omnifix_chats', JSON.stringify(chats)); }
-
-    function renderHistory() {
-      const list = document.getElementById('historyList');
-      list.innerHTML = '';
-      chats.forEach(chat => {
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'history-item-container';
-
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerText = chat.title;
-        item.onclick = () => loadChat(chat.id);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-chat-btn';
-        deleteBtn.innerHTML = '🗑️';
-        deleteBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteChat(chat.id);
-        };
-
-        itemContainer.appendChild(item);
-        itemContainer.appendChild(deleteBtn);
         list.appendChild(itemContainer);
       });
     }
 
-    function deleteChat(id) {
+    function deleteChat(e, id) {
+      e.stopPropagation();
       chats = chats.filter(c => c.id !== id);
-      saveChats();
-      renderHistory();
+      saveChats(); renderHistory();
       if (currentChatId === id) {
         if (chats.length > 0) loadChat(chats[0].id);
         else startNewChat();
@@ -660,59 +274,75 @@ er;">
       currentChatId = id;
       const chat = chats.find(c => c.id === id);
       if (!chat) return;
-
       clearChatBox();
       const hero = document.getElementById('heroWelcome');
       if (hero && chat.messages.length > 0) hero.style.display = 'none';
 
-      chat.messages.forEach(msg => {
-        appendMessageUI(msg.text, msg.sender, msg.mediaUrl, msg.mediaType);
-      });
+      chat.messages.forEach(msg => appendMessageUI(msg.text, msg.sender, msg.mediaList));
       if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
     }
 
-    function handleFileSelect(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    // التعامل مع إضافة حتى 10 صور أو فيديوهات
+    function handleFilesSelect(event) {
+      const files = Array.from(event.target.files);
+      if (selectedFiles.length + files.length > 10) {
+        alert(currentLang === 'ar' ? 'الحد الأقصى هو 10 ملفات فقط!' : 'Maximum 10 files allowed!');
+        return;
+      }
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        selectedMediaBase64 = e.target.result;
-        selectedMediaType = file.type.startsWith('image/') ? 'image' : 'video';
-
-        const previewEl = document.getElementById('previewElement');
-        if (selectedMediaType === 'image') {
-          previewEl.innerHTML = `<img src="${selectedMediaBase64}">`;
-        } else {
-          previewEl.innerHTML = `<video src="${selectedMediaBase64}" controls></video>`;
-        }
-        document.getElementById('mediaPreviewContainer').style.display = 'flex';
-      };
-      reader.readAsDataURL(file);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          selectedFiles.push({
+            data: e.target.result,
+            type: file.type.startsWith('image/') ? 'image' : 'video'
+          });
+          renderMediaPreview();
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
-    function clearMediaAttachment() {
-      selectedMediaBase64 = null;
-      selectedMediaType = null;
-      document.getElementById('fileInput').value = '';
-      document.getElementById('mediaPreviewContainer').style.display = 'none';
+    function renderMediaPreview() {
+      const area = document.getElementById('mediaPreviewArea');
+      if (selectedFiles.length === 0) {
+        area.style.display = 'none';
+        return;
+      }
+      area.style.display = 'flex';
+      area.innerHTML = '';
+      selectedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.innerHTML = `
+          ${file.type === 'image' ? `<img src="${file.data}">` : `<video src="${file.data}"></video>`}
+          <button class="remove-media" onclick="removeSelectedMedia(${index})">✕</button>
+        `;
+        area.appendChild(item);
+      });
     }
 
-    function appendMessageUI(text, sender, mediaUrl = null, mediaType = null) {
+    function removeSelectedMedia(index) {
+      selectedFiles.splice(index, 1);
+      renderMediaPreview();
+    }
+
+    function appendMessageUI(text, sender, mediaList = []) {
       const container = document.getElementById('chatContainer');
       const hero = document.getElementById('heroWelcome');
       if (hero) hero.style.display = 'none';
 
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
-      
       let html = text || '';
-      if (mediaUrl) {
-        if (mediaType === 'image') {
-          html += `<br><img src="${mediaUrl}" class="preview-media">`;
-        } else if (mediaType === 'video') {
-          html += `<br><video src="${mediaUrl}" controls class="preview-media"></video>`;
-        }
+
+      if (mediaList && mediaList.length > 0) {
+        html += `<div class="media-grid">`;
+        mediaList.forEach(m => {
+          if (m.type === 'image') html += `<img src="${m.data}">`;
+          else html += `<video src="${m.data}" controls></video>`;
+        });
+        html += `</div>`;
       }
 
       msgDiv.innerHTML = html;
@@ -724,28 +354,23 @@ er;">
     async function sendMessage() {
       const input = document.getElementById('userInput');
       const text = input.value.trim();
-      if (!text && !selectedMediaBase64) return;
+      if (!text && selectedFiles.length === 0) return;
 
       if (!currentChatId) {
         currentChatId = Date.now();
-        chats.unshift({ id: currentChatId, title: text.substring(0, 20) || 'مرفق وسائط', messages: [] });
+        chats.unshift({ id: currentChatId, title: text.substring(0, 15) || 'ميديا', messages: [] });
       }
 
       const activeChat = chats.find(c => c.id === currentChatId);
-      if (activeChat && activeChat.messages.length === 0) {
-        activeChat.title = text.substring(0, 20) || 'مرفق وسائط';
-      }
+      const currentMediaList = [...selectedFiles];
 
-      const currentMedia = selectedMediaBase64;
-      const currentType = selectedMediaType;
-
-      appendMessageUI(text, 'user', currentMedia, currentType);
-      activeChat.messages.push({ text, sender: 'user', mediaUrl: currentMedia, mediaType: currentType });
-      saveChats();
-      renderHistory();
+      appendMessageUI(text, 'user', currentMediaList);
+      activeChat.messages.push({ text, sender: 'user', mediaList: currentMediaList });
+      saveChats(); renderHistory();
 
       input.value = '';
-      clearMediaAttachment();
+      selectedFiles = [];
+      renderMediaPreview();
 
       const loadingEl = appendMessageUI(i18n[currentLang].thinking, 'bot');
 
@@ -756,27 +381,22 @@ er;">
           body: JSON.stringify({ 
             message: text,
             lang: currentLang,
-            media: currentMedia
+            mediaList: currentMediaList
           })
         });
         const data = await response.json();
-
         const replyText = data.reply || '...';
         loadingEl.innerText = replyText;
         activeChat.messages.push({ text: replyText, sender: 'bot' });
         saveChats();
       } catch (err) {
-        loadingEl.innerText = currentLang === 'ar' ? 'حدث خطأ في الاتصال بالسيرفر.' : 'Server connection error.';
+        loadingEl.innerText = currentLang === 'ar' ? 'خطأ في الاتصال.' : 'Connection error.';
       }
     }
 
     generatePlans();
-    if (chats.length > 0) {
-      renderHistory();
-      loadChat(chats[0].id);
-    } else {
-      startNewChat();
-    }
+    if (chats.length > 0) { renderHistory(); loadChat(chats[0].id); }
+    else { startNewChat(); }
   </script>
 </body>
 </html>
