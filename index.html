@@ -1,462 +1,198 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniFix AI</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { 
-            background-color: #0f172a; 
-            color: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            overscroll-behavior-y: none;
-            touch-action: pan-x pan-y;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFix AI</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --chat-bg: #1e293b;
+      --text-color: #f8fafc;
+      --user-msg: #2563eb;
+      --bot-msg: #334155;
+      --sidebar-bg: #020617;
+      --border-color: #475569;
+    }
 
-        /* الشريط العلوي */
-        .header { background-color: #1e293b; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .header-title { font-size: 1.1rem; font-weight: bold; color: #38bdf8; }
-        .header-btns { display: flex; gap: 6px; }
+    .light-mode {
+      --bg-color: #f1f5f9;
+      --chat-bg: #ffffff;
+      --text-color: #0f172a;
+      --user-msg: #2563eb;
+      --bot-msg: #e2e8f0;
+      --sidebar-bg: #cbd5e1;
+      --border-color: #cbd5e1;
+    }
 
-        .btn-action { background: #344155; color: #fff; border: 1px solid #475569; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
-        .btn-action-vip { background: #0284c7; border-color: #38bdf8; font-weight: bold; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; }
 
-        /* منطقة الشات */
-        .chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
-        .message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
-        .message-user { background-color: #0284c7; color: white; align-self: flex-start; border-bottom-right-radius: 2px; }
-        .message-bot { background-color: #1e293b; color: #e2e8f0; align-self: flex-end; border-bottom-left-radius: 2px; border: 1px solid #334155; }
-        .message-img { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; }
+    /* القائمة الجانبية */
+    .sidebar {
+      width: 260px;
+      background-color: var(--sidebar-bg);
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      position: fixed;
+      top: 0; bottom: 0; right: -260px;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      border-left: 1px solid var(--border-color);
+    }
+    body.ltr .sidebar { right: auto; left: -260px; transition: left 0.3s ease; border-left: none; border-right: 1px solid var(--border-color); }
+    .sidebar.open { right: 0; }
+    body.ltr .sidebar.open { left: 0; }
 
-        /* معاينة الصور قبل الإرسال */
-        .image-preview-container { display: flex; gap: 8px; padding: 8px 15px; background-color: #182234; border-top: 1px solid #334155; max-height: 90px; overflow-x: auto; }
-        .preview-item { position: relative; display: inline-block; }
-        .preview-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #0284c7; }
-        .remove-img-btn { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .sidebar button {
+      background: var(--user-msg);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-        /* شريط الكتابة */
-        .input-box { display: flex; padding: 10px; background-color: #1e293b; border-top: 1px solid #475569; gap: 8px; }
-        .input-box input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; background-color: #0f172a; border: 1px solid #475569; color: #fff; outline: none; font-size: 0.95rem; }
-        .send-btn { background-color: #0284c7; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .attach-btn { background-color: #334155; color: #38bdf8; border: 1px solid #475569; padding: 10px 14px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    /* المنطقة الرئيسية */
+    .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; width: 100%; }
+    
+    header {
+      background-color: var(--chat-bg);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
 
-        /* النوافذ المنبثقة */
-        .sidebar-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #1e293b; width: 92%; max-width: 420px; max-height: 85vh; border-radius: 12px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border: 1px solid #475569; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; font-weight: bold; color: #38bdf8; }
-        .chat-list { overflow-y:auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .history-item { background: #0f172a; padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    .icon-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
 
-        /* كروت الباقات المتميزة */
-        .plan-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
-        .plan-card.active-plan { border-color: #22c55e; background-color: #062e1b; }
-        .plan-title { font-weight: bold; color: #38bdf8; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
-        .plan-desc { font-size: 0.8rem; color: #94a3b8; line-height: 1.3; }
-        .plan-btn { background: #0284c7; color: white; border: none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 4px; }
-        .plan-btn.active { background: #22c55e; cursor: default; }
-    </style>
+    .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; word-break: break-word; }
+    .user { background-color: var(--user-msg); color: white; align-self: flex-end; }
+    .bot { background-color: var(--bot-msg); color: var(--text-color); align-self: flex-start; }
+    .message img { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+
+    /* منطقة الإدخال */
+    .input-box { padding: 15px; background-color: var(--chat-bg); display: flex; gap: 10px; border-top: 1px solid var(--border-color); }
+    .input-box input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
+    .input-box button { padding: 12px 20px; background: var(--user-msg); color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+    .overlay.active { display: block; }
+  </style>
 </head>
 <body>
 
-    <!-- الشريط العلوي -->
-    <div class="header">
-        <div class="header-title">OmniFix AI</div>
-        <div class="header-btns">
-            <button class="btn-action" onclick="startNewChat()">+ جديدة</button>
-            <button class="btn-action" onclick="openHistory()">📁 المحادثات</button>
-            <button class="btn-action btn-action-vip" onclick="openPacks()">💎 الباقات</button>
-        </div>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- القائمة الجانبية -->
+  <div class="sidebar" id="sidebar">
+    <h2 id="menu-title">القائمة</h2>
+    <button onclick="newChat()" id="new-chat-btn">+ محادثة جديدة</button>
+    <div style="flex:1;"></div>
+    <button onclick="toggleTheme()" class="icon-btn" id="theme-btn">🌙 الوضع الليلي</button>
+    <button onclick="toggleLang()" class="icon-btn" id="lang-btn">🌐 English</button>
+  </div>
+
+  <!-- الواجهة الرئيسية -->
+  <div class="main-content">
+    <header>
+      <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+      <h2>OmniFix AI</h2>
+      <div></div>
+    </header>
+
+    <div class="chat-box" id="chatBox">
+      <div class="message bot" id="welcome-msg">مرحباً بك! كيف يمكنني مساعدتك اليوم؟ (يمكنك قولي "ارسم صورة لـ..." لتوليد صور)</div>
     </div>
 
-    <!-- منطقة المحادثة -->
-    <div class="chat-box" id="chat-box"></div>
-
-    <!-- معاينة الصور المستوردة -->
-    <div class="image-preview-container" id="img-preview-box" style="display: none;"></div>
-
-    <!-- شريط الكتابة -->
     <div class="input-box">
-        <label class="attach-btn" id="attach-btn" title="إرفاق صور">
-            📷
-            <input type="file" id="image-input" accept="image/*" multiple style="display: none;" onchange="handleImageSelect(event)">
-        </label>
-        <input type="text" id="user-input" placeholder="اكتب رسالتك..." onkeydown="if(event.key === 'Enter') sendMessage()">
-        <button class="send-btn" onclick="sendMessage()">إرسال</button>
+      <input type="text" id="userInput" placeholder="اكتب رسالتك أو طلب الرسم..." onkeydown="if(event.key==='Enter') sendMessage()">
+      <button onclick="sendMessage()" id="send-btn">إرسال</button>
     </div>
+  </div>
 
-    <!-- نافذة سجل المحادثات السابقة -->
-    <div class="sidebar-modal" id="history-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>📁 أرشيف المحادثات</span>
-                <button class="btn-action" onclick="closeHistory()">إغلاق</button>
-            </div>
-            <div class="chat-list" id="chat-list"></div>
-        </div>
-    </div>
+  <script>
+    let currentLang = 'ar';
 
-    <!-- نافذة الباقات -->
-    <div class="sidebar-modal" id="packs-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>💎 باقات قوة الذكاء الاصطناعي</span>
-                <button class="btn-action" onclick="closePacks()">إغلاق</button>
-            </div>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('active');
+    }
 
-            <div class="plan-card" id="plan-0">
-                <div class="plan-title"><span>الباقة العادية</span> <span>مجاناً</span></div>
-                <div class="plan-desc">إجابات أصلية أساسية وبسيطة.</div>
-                <button class="plan-btn active" id="btn-plan-0">الباقة الحالية</button>
-            </div>
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+      const isLight = document.body.classList.contains('light-mode');
+      document.getElementById('theme-btn').innerText = isLight ? '☀️ الوضع النهاري' : '🌙 الوضع الليلي';
+    }
 
-            <div class="plan-card" id="plan-1">
-                <div class="plan-title"><span>🛸 باقة الدقة المتقدمة</span> <span>🧪 1 إعلان</span></div>
-                <div class="plan-desc">رفع دقة الإجابات وتنسيق أفضل للردود والشروحات.</div>
-                <button class="plan-btn" id="btn-plan-1" onclick="activatePlan(1, 1)">تفعيل (1 إعلان)</button>
-            </div>
+    function toggleLang() {
+      if (currentLang === 'ar') {
+        currentLang = 'en';
+        document.documentElement.dir = 'ltr';
+        document.body.classList.add('ltr');
+        document.getElementById('lang-btn').innerText = '🌐 العربية';
+        document.getElementById('menu-title').innerText = 'Menu';
+        document.getElementById('new-chat-btn').innerText = '+ New Chat';
+        document.getElementById('userInput').placeholder = 'Type a message or "draw..."';
+        document.getElementById('send-btn').innerText = 'Send';
+        document.getElementById('welcome-msg').innerText = 'Welcome! How can I help you today? (Say "draw a..." to generate images)';
+      } else {
+        currentLang = 'ar';
+        document.documentElement.dir = 'rtl';
+        document.body.classList.remove('ltr');
+        document.getElementById('lang-btn').innerText = '🌐 English';
+        document.getElementById('menu-title').innerText = 'القائمة';
+        document.getElementById('new-chat-btn').innerText = '+ محادثة جديدة';
+        document.getElementById('userInput').placeholder = 'اكتب رسالتك أو طلب الرسم...';
+        document.getElementById('send-btn').innerText = 'إرسال';
+        document.getElementById('welcome-msg').innerText = 'مرحباً بك! كيف يمكنني مساعدتك اليوم؟ (يمكنك قولي "ارسم صورة لـ..." لتوليد صور)';
+      }
+    }
 
-            <div class="plan-card" id="plan-2">
-                <div class="plan-title"><span>🧑‍💻 باقة المبرمج الذكي</span> <span>🧪 2 إعلان</span></div>
-                <div class="plan-desc">توليد أكواد C# و HTML و JS بدون أي اختصالات أو أخطاء.</div>
-                <button class="plan-btn" id="btn-plan-2" onclick="activatePlan(2, 2)">تفعيل (2 إعلان)</button>
-            </div>
+    function newChat() {
+      document.getElementById('chatBox').innerHTML = `<div class="message bot">${currentLang === 'ar' ? 'محادثة جديدة جارية...' : 'New chat started...'}</div>`;
+      toggleSidebar();
+    }
 
-            <div class="plan-card" id="plan-3">
-                <div class="plan-title"><span>🚀 باقة السرعة الخارقة</span> <span>🧪 3 إعلانات</span></div>
-                <div class="plan-desc">إجابات سريعة بدون وقت انتظار مع فهم أكبر للصور.</div>
-                <button class="plan-btn" id="btn-plan-3" onclick="activatePlan(3, 3)">تفعيل (3 إعلانات)</button>
-            </div>
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
 
-            <div class="plan-card" id="plan-4">
-                <div class="plan-title"><span>🧠 باقة التفكير العميق</span> <span>🧪 4 إعلانات</span></div>
-                <div class="plan-desc">حل البرمجيات المعقدة والتحليل الرياضي والمنطقي المفصل.</div>
-                <button class="plan-btn" id="btn-plan-4" onclick="activatePlan(4, 4)">تفعيل (4 إعلانات)</button>
-            </div>
+      const chatBox = document.getElementById('chatBox');
+      
+      chatBox.innerHTML += `<div class="message user">${text}</div>`;
+      input.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
 
-            <div class="plan-card" id="plan-5">
-                <div class="plan-title"><span>🔮 باقة مطور الألعاب (Unity Expert)</span> <span>🧪 5 إعلانات</span></div>
-                <div class="plan-desc">بناء وتصميم سكربتات Unity وإحصائيات المراحل والمجسمات بدقة عالية.</div>
-                <button class="plan-btn" id="btn-plan-5" onclick="activatePlan(5, 5)">تفعيل (5 إعلانات)</button>
-            </div>
+      const loadingId = 'loading-' + Date.now();
+      chatBox.innerHTML += `<div class="message bot" id="${loadingId}">${currentLang === 'ar' ? 'جاري التفكير...' : 'Thinking...'}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
 
-            <div class="plan-card" id="plan-6">
-                <div class="plan-title"><span>⚡ باقة الاستجابة اللحظية</span> <span>🧪 6 إعلانات</span></div>
-                <div class="plan-desc">أقصى معدل ضخ واستجابة سريعة للبيانات والردود الطويلة.</div>
-                <button class="plan-btn" id="btn-plan-6" onclick="activatePlan(6, 6)">تفعيل (6 إعلانات)</button>
-            </div>
-
-            <div class="plan-card" id="plan-7">
-                <div class="plan-title"><span>🔥 باقة الماجس الخارق</span> <span>🧪 7 إعلانات</span></div>
-                <div class="plan-desc">50+ معالجة وتصنيف ما يزيد عن صورة مرفقة بذكاء فائق.</div>
-                <button class="plan-btn" id="btn-plan-7" onclick="activatePlan(7, 7)">تفعيل (7 إعلانات)</button>
-            </div>
-
-            <div class="plan-card" id="plan-8">
-                <div class="plan-title"><span>🌌 باقة الذكاء الشامل</span> <span>🧪 8 إعلانات</span></div>
-                <div class="plan-desc">دمج مميزات الأكواد، السرعة، والتحليل العميق في باقة واحدة.</div>
-                <button class="plan-btn" id="btn-plan-8" onclick="activatePlan(8, 8)">تفعيل (8 إعلانات)</button>
-            </div>
-
-            <div class="plan-card" id="plan-9">
-                <div class="plan-title"><span>🔥 باقة النخبة (Ultimate AI)</span> <span>🧪 9 إعلانات</span></div>
-                <div class="plan-desc">أداء استثنائي متكامل لتطوير المواقع والتطبيقات والألعاب.</div>
-                <button class="plan-btn" id="btn-plan-9" onclick="activatePlan(9, 9)">تفعيل (9 إعلانات)</button>
-            </div>
-
-            <div class="plan-card" id="plan-10">
-                <div class="plan-title"><span>👑 باقة الملك (Google VIP Power)</span> <span>🧪 10 إعلانات</span></div>
-                <div class="plan-desc">القوة القصوى الشاملة: تدمج كافة قدرات المساعد وبأسرع أداء ممكن!</div>
-                <button class="plan-btn" id="btn-plan-10" onclick="activatePlan(10, 10)">تفعيل (10 إعلانات)</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // رابط سيرفر Vercel
-        const API_URL = 'https://omnifix-backend.vercel.app/api/chat';
-        let currentChatId = Date.now().toString();
-        let selectedImagesBase64 = [];
-        let adsProgress = {};
-
-        window.onload = function() {
-            checkPlanExpiry();
-            loadCurrentChat();
-        };
-
-        function checkPlanExpiry() {
-            const activePlan = localStorage.getItem('omni_active_plan_id');
-            const expiryTime = localStorage.getItem('omni_plan_expiry');
-
-            if (activePlan && expiryTime) {
-                if (Date.now() > parseInt(expiryTime, 10)) {
-                    localStorage.removeItem('omni_active_plan_id');
-                    localStorage.removeItem('omni_plan_expiry');
-                    updatePlanButtonsUI(0);
-                    alert("انتهت صلاحية الباقة الحالية (مرت 24 ساعة). تم العودة للباقة المجانية.");
-                } else {
-                    updatePlanButtonsUI(parseInt(activePlan, 10));
-                }
-            } else {
-                updatePlanButtonsUI(0);
-            }
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await response.json();
+        
+        const loadingEl = document.getElementById(loadingId);
+        if (data.isImage) {
+          loadingEl.innerHTML = `<img src="${data.imageUrl}" alt="Generated Image">`;
+        } else {
+          loadingEl.innerText = data.reply;
         }
-
-        function activatePlan(planId, requiredAds) {
-            if (!adsProgress[planId]) adsProgress[planId] = 0;
-            adsProgress[planId]++;
-
-            if (adsProgress[planId] < requiredAds) {
-                alert(`تم تسجيل مشاهدة إعلان (${adsProgress[planId]}/${requiredAds}). اضغط مجدداً لتكملة الباقة.`);
-            } else {
-                const expiryTimestamp = Date.now() + (24 * 60 * 60 * 1000);
-                localStorage.setItem('omni_active_plan_id', planId.toString());
-                localStorage.setItem('omni_plan_expiry', expiryTimestamp.toString());
-                
-                alert(`تهانينا! تم تفعيل الباقة رقم (${planId}) بنجاح لمدة 24 ساعة.`);
-                
-                adsProgress[planId] = 0;
-                checkPlanExpiry();
-            }
-        }
-
-        function updatePlanButtonsUI(activePlanId) {
-            for (let i = 0; i <= 10; i++) {
-                const card = document.getElementById(`plan-${i}`);
-                const btn = document.getElementById(`btn-plan-${i}`);
-                if (!card || !btn) continue;
-
-                if (i === activePlanId) {
-                    card.classList.add('active-plan');
-                    btn.classList.add('active');
-                    btn.innerText = '✓ الباقة مفعلة الآن';
-                } else {
-                    card.classList.remove('active-plan');
-                    btn.classList.remove('active');
-                    if (i === 0) btn.innerText = 'الباقة الحالية';
-                    else btn.innerText = `تفعيل (${i} إعلانات)`;
-                }
-            }
-        }
-
-        function handleImageSelect(event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
-
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64Str = e.target.result;
-                    selectedImagesBase64.push(base64Str);
-                    renderImagePreviews();
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function renderImagePreviews() {
-            const previewBox = document.getElementById('img-preview-box');
-            previewBox.innerHTML = '';
-            if (selectedImagesBase64.length === 0) {
-                previewBox.style.display = 'none';
-                return;
-            }
-            previewBox.style.display = 'flex';
-
-            selectedImagesBase64.forEach((imgSrc, index) => {
-                const item = document.createElement('div');
-                item.className = 'preview-item';
-                item.innerHTML = `
-                    <img src="${imgSrc}">
-                    <button class="remove-img-btn" onclick="removeImage(${index})">✕</button>
-                `;
-                previewBox.appendChild(item);
-            });
-        }
-
-        function removeImage(index) {
-            selectedImagesBase64.splice(index, 1);
-            renderImagePreviews();
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const messageText = input.value.trim();
-
-            if (!messageText && selectedImagesBase64.length === 0) return;
-
-            const imagesToSend = [...selectedImagesBase64];
-            appendMessage(messageText, 'user', imagesToSend);
-
-            input.value = '';
-            selectedImagesBase64 = [];
-            renderImagePreviews();
-
-            const lowerMsg = messageText.toLowerCase();
-            if (lowerMsg.includes('من انت') || lowerMsg.includes('من أنت')) {
-                const replyText = "أنا OmniFix AI - مطور من شركة جوجل";
-                saveAndDisplayBotReply(replyText);
-                return;
-            }
-
-            if (lowerMsg.includes('هل انت مسلم') || lowerMsg.includes('هل أنت مسلم')) {
-                const replyText = "صنعني مسلم إذن أنا مسلم والحمد لله";
-                saveAndDisplayBotReply(replyText);
-                return;
-            }
-
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message message-bot';
-            loadingDiv.id = 'loading';
-            loadingDiv.innerText = 'جاري التفكير...';
-            document.getElementById('chat-box').appendChild(loadingDiv);
-            scrollToBottom();
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: messageText, images: imagesToSend })
-                });
-
-                const data = await response.json();
-                document.getElementById('loading')?.remove();
-
-                if (data.reply) {
-                    saveAndDisplayBotReply(data.reply);
-                } else if (data.error) {
-                    saveAndDisplayBotReply('حدث خطأ: ' + data.error);
-                } else {
-                    saveAndDisplayBotReply('تعذر الحصول على رد من السيرفر.');
-                }
-            } catch (error) {
-                document.getElementById('loading')?.remove();
-                saveAndDisplayBotReply('حدث خطأ في الاتصال بالسيرفر: ' + error.message);
-            }
-        }
-
-        function saveAndDisplayBotReply(text) {
-            appendMessage(text, 'bot');
-            saveMessageToLocalStorage({ sender: 'bot', text: text });
-        }
-
-        function appendMessage(text, sender, images = []) {
-            const chatBox = document.getElementById('chat-box');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message message-${sender}`;
-
-            if (text) {
-                const textSpan = document.createElement('div');
-                textSpan.innerText = text;
-                msgDiv.appendChild(textSpan);
-            }
-
-            if (images && images.length > 0) {
-                images.forEach(imgSrc => {
-                    const imgTag = document.createElement('img');
-                    imgTag.src = imgSrc;
-                    imgTag.className = 'message-img';
-                    msgDiv.appendChild(imgTag);
-                });
-            }
-
-            chatBox.appendChild(msgDiv);
-            scrollToBottom();
-
-            if (sender === 'user') {
-                saveMessageToLocalStorage({ sender: 'user', text: text, images: images });
-            }
-        }
-
-        function scrollToBottom() {
-            const chatBox = document.getElementById('chat-box');
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function saveMessageToLocalStorage(msgObj) {
-            let history = JSON.parse(localStorage.getItem('omni_chat_history')) || {};
-            if (!history[currentChatId]) {
-                history[currentChatId] = [];
-            }
-            history[currentChatId].push(msgObj);
-            localStorage.setItem('omni_chat_history', JSON.stringify(history));
-            localStorage.setItem('omni_last_chat_id', currentChatId);
-        }
-
-        function startNewChat() {
-            currentChatId = Date.now().toString();
-            document.getElementById('chat-box').innerHTML = '';
-            appendMessage('مرحباً بك! أنا مساعد OmniFix AI، كيف يمكنني مساعدتك اليوم؟', 'bot');
-        }
-
-        function loadCurrentChat() {
-            const history = JSON.parse(localStorage.getItem('omni_chat_history')) || {};
-            const lastId = localStorage.getItem('omni_last_chat_id');
-            
-            if (lastId && history[lastId]) {
-                currentChatId = lastId;
-                history[lastId].forEach(msg => {
-                    appendMessage(msg.text, msg.sender, msg.images || []);
-                });
-            } else {
-                startNewChat();
-            }
-        }
-
-        function openHistory() {
-            const historyModal = document.getElementById('history-modal');
-            const chatList = document.getElementById('chat-list');
-            chatList.innerHTML = '';
-
-            const history = JSON.parse(localStorage.getItem('omni_chat_history')) || {};
-            const chatIds = Object.keys(history);
-
-            if (chatIds.length === 0) {
-                chatList.innerHTML = '<div style="color:#94a3b8; text-align:center;">لا توجد محادثات محفوظة.</div>';
-            } else {
-                chatIds.forEach(id => {
-                    const firstMsg = history[id][0] ? history[id][0].text : 'محادثة جديدة';
-                    const item = document.createElement('div');
-                    item.className = 'history-item';
-                    item.innerHTML = `
-                        <span>${firstMsg.substring(0, 25)}...</span>
-                        <button class="btn-action" onclick="switchChat('${id}')">فتح</button>
-                    `;
-                    chatList.appendChild(item);
-                });
-            }
-
-            historyModal.style.display = 'flex';
-        }
-
-        function closeHistory() {
-            document.getElementById('history-modal').style.display = 'none';
-        }
-
-        function switchChat(id) {
-            currentChatId = id;
-            localStorage.setItem('omni_last_chat_id', id);
-            document.getElementById('chat-box').innerHTML = '';
-            
-            const history = JSON.parse(localStorage.getItem('omni_chat_history')) || {};
-            if (history[id]) {
-                history[id].forEach(msg => {
-                    appendMessage(msg.text, msg.sender, msg.images || []);
-                });
-            }
-            closeHistory();
-        }
-
-        function openPacks() {
-            document.getElementById('packs-modal').style.display = 'flex';
-        }
-
-        function closePacks() {
-            document.getElementById('packs-modal').style.display = 'none';
-        }
-    </script>
+      } catch (err) {
+        document.getElementById(loadingId).innerText = currentLang === 'ar' ? 'حدث خطأ في الاتصال.' : 'Connection error.';
+      }
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
 </body>
 </html>
