@@ -138,8 +138,17 @@
     }
     .plan-card:hover { transform: translateY(-3px); border-color: var(--accent-color); }
     .plan-card.active-plan { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
+    
+    /* تصميم خاص للباقة 30 */
+    .plan-card.special-plan {
+      border: 2px solid #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+
     .plan-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; }
     .plan-price { font-size: 20px; font-weight: bold; color: var(--accent-color); margin-bottom: 12px; }
+    .plan-card.special-plan .plan-price { color: #f59e0b; }
     .plan-features { list-style: none; text-align: right; font-size: 12px; color: var(--text-sub); margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
     body.ltr .plan-features { text-align: left; }
     .plan-btn { padding: 8px; background: var(--accent-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
@@ -222,7 +231,6 @@
         topPlan: "الباقة 1",
         modalTitle: "اختر من بين 30 باقة متاحة",
         freeText: "مجاناً",
-        monthText: "شهرياً",
         currentBtn: "الباقة الحالية",
         selectBtn: "ترقية الآن",
         adsCount: "عدد الإعلانات:"
@@ -241,14 +249,13 @@
         topPlan: "Plan 1",
         modalTitle: "Choose from 30 Available Plans",
         freeText: "Free",
-        monthText: "month",
         currentBtn: "Current Plan",
         selectBtn: "Upgrade Now",
         adsCount: "Ads Count:"
       }
     };
 
-    // توليد 30 باقة
+    // توليد 30 باقة مع تحديد مدة 24 ساعة للجميع و48 ساعة للباقة 30
     function generatePlans() {
       const grid = document.getElementById('plansGrid');
       grid.innerHTML = '';
@@ -258,25 +265,38 @@
         const adsNum = i * 2; // تزيد بمقدار 2 إعلانات لكل باقة
         const price = i === 1 ? 0 : (i * 1.99).toFixed(2);
         
+        // تحديد المدة: الباقة 30 مدتها 48 ساعة وباقي الباقات 24 ساعة
+        const durationText = i === 30 
+          ? (currentLang === 'ar' ? '⏳ المدة: 48 ساعة (خاصة)' : '⏳ Duration: 48 Hours (Special)')
+          : (currentLang === 'ar' ? '⏳ المدة: 24 ساعة' : '⏳ Duration: 24 Hours');
+
         const card = document.createElement('div');
-        card.className = `plan-card ${i === 1 ? 'active-plan' : ''}`;
+        card.className = `plan-card ${i === 1 ? 'active-plan' : ''} ${i === 30 ? 'special-plan' : ''}`;
         
         card.innerHTML = `
           <div>
-            <div class="plan-title">${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`}</div>
-            <div class="plan-price">${price == 0 ? t.freeText : `$${price} /${t.monthText}`}</div>
+            <div class="plan-title">${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`} ${i === 30 ? '🔥' : ''}</div>
+            <div class="plan-price">${price == 0 ? t.freeText : `$${price}`}</div>
             <ul class="plan-features">
               <li>📺 ${t.adsCount} <b>${adsNum}</b></li>
+              <li>${durationText}</li>
               <li>⚡ ${currentLang === 'ar' ? 'سرعة الرد:' : 'Speed:'} Level ${i}</li>
               <li>🎨 ${currentLang === 'ar' ? 'توليد صور بجودة' : 'Image Quality'} ${i === 1 ? 'Standard' : i < 15 ? 'HD' : '4K'}</li>
             </ul>
           </div>
-          <button class="plan-btn" style="${i === 1 ? 'background:#10b981;' : ''}" onclick="alert('${currentLang === 'ar' ? 'تم اختيار الباقة ' + i : 'Selected Plan ' + i}')">
+          <button class="plan-btn" style="${i === 1 ? 'background:#10b981;' : i === 30 ? 'background: linear-gradient(135deg, #f59e0b, #d97706);' : ''}" onclick="selectPlan(${i}, ${i === 30 ? 48 : 24})">
             ${i === 1 ? t.currentBtn : t.selectBtn}
           </button>
         `;
         grid.appendChild(card);
       }
+    }
+
+    function selectPlan(planNumber, hours) {
+      const msg = currentLang === 'ar' 
+        ? `تم الاشتراك في الباقة ${planNumber} بنجاح! المدة المتاحة: ${hours} ساعة.` 
+        : `Successfully subscribed to Plan ${planNumber}! Duration: ${hours} hours.`;
+      alert(msg);
     }
 
     function toggleSidebar() {
