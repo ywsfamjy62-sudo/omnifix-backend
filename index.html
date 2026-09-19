@@ -36,19 +36,9 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; overflow: hidden; transition: background 0.3s; }
 
-    /* القائمة الجانبية */
     .sidebar {
-      width: 280px;
-      background-color: var(--sidebar-bg);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      position: fixed;
-      top: 0; bottom: 0; right: -280px;
-      transition: right 0.3s ease;
-      z-index: 1000;
-      border-left: 1px solid var(--border-color);
+      width: 280px; background-color: var(--sidebar-bg); padding: 20px; display: flex; flex-direction: column; gap: 15px;
+      position: fixed; top: 0; bottom: 0; right: -280px; transition: right 0.3s ease; z-index: 1000; border-left: 1px solid var(--border-color);
       box-shadow: -5px 0 25px rgba(0,0,0,0.5);
     }
     body.ltr .sidebar { right: auto; left: -280px; transition: left 0.3s ease; border-left: none; border-right: 1px solid var(--border-color); }
@@ -56,47 +46,29 @@
     body.ltr .sidebar.open { left: 0; }
 
     .new-btn {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: white; border: none; padding: 12px; border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 12px; border-radius: 10px;
       cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: transform 0.2s;
     }
     .new-btn:hover { transform: scale(1.02); }
 
     .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .history-item { padding: 10px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid transparent; transition: 0.2s; }
-    .history-item:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-color); }
+    .history-item-container { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 5px 10px; border: 1px solid transparent; }
+    .history-item-container:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-color); }
+    .history-item { flex: 1; cursor: pointer; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .delete-chat-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 4px; }
 
-    /* الشاشة الرئيسية */
     .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
 
     header {
-      background-color: var(--chat-bg);
-      padding: 15px 20px;
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border-color);
-      backdrop-filter: blur(10px);
+      background-color: var(--chat-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-color); backdrop-filter: blur(10px);
     }
 
     .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
     .icon-btn:hover { background: rgba(255,255,255,0.15); }
 
-    /* خلفية الشعار */
-    .chat-container {
-      flex: 1; position: relative; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;
-    }
-
-    .watermark-bg {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 280px; height: 280px;
-      background-image: url('https://i.ibb.co/L5kL2bL/logo.png');
-      background-size: contain; background-repeat: no-repeat; background-position: center;
-      opacity: 0.04;
-      pointer-events: none;
-      filter: grayscale(100%) invert(100%);
-    }
+    .chat-container { flex: 1; position: relative; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
 
     .hero-welcome {
       margin: auto; text-align: center; max-width: 500px; z-index: 2; padding: 30px;
@@ -106,55 +78,40 @@
     .hero-welcome h1 { font-size: 28px; margin-bottom: 10px; background: linear-gradient(90deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero-welcome p { color: var(--text-sub); font-size: 15px; line-height: 1.6; }
 
-    /* الرسائل */
     .message { max-width: 75%; padding: 14px 18px; border-radius: 16px; line-height: 1.6; font-size: 15px; word-break: break-word; z-index: 2; }
     .user { background-color: var(--user-msg); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
     .bot { background-color: var(--bot-msg); color: var(--text-color); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--border-color); }
-    .message img { max-width: 100%; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .preview-media { max-width: 200px; max-height: 200px; border-radius: 10px; margin-top: 8px; display: block; border: 1px solid var(--border-color); }
 
-    /* حقل الإدخال */
-    .input-container { padding: 15px 20px; background: var(--chat-bg); border-top: 1px solid var(--border-color); display: flex; gap: 12px; z-index: 5; }
-    .input-container input { flex: 1; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 15px; outline: none; }
-    .input-container input:focus { border-color: var(--accent-color); }
-    .input-container button { padding: 14px 24px; background: var(--accent-color); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .input-container button:hover { background: var(--accent-hover); }
+    .input-container { padding: 15px 20px; background: var(--chat-bg); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; z-index: 5; }
+    .input-container input[type="text"] { flex: 1; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 15px; outline: none; }
+    .input-container button { padding: 14px 20px; background: var(--accent-color); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .add-media-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px 16px; border-radius: 12px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-    /* نافذة الباقات */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(8px); }
     .modal.active { display: flex; }
     .modal-content { background: var(--chat-bg); width: 95%; max-width: 1100px; padding: 25px; border-radius: 20px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
     .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
     
     .plan-card { 
-      background: rgba(255,255,255,0.03); 
-      border: 1px solid var(--border-color); 
-      border-radius: 15px; 
-      padding: 15px; 
-      text-align: center; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between;
-      transition: transform 0.2s, border-color 0.2s;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 15px; padding: 15px; text-align: center;
+      display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;
     }
     .plan-card:hover { transform: translateY(-3px); border-color: var(--accent-color); }
     .plan-card.active-plan { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
-    
-    /* تصميم خاص للباقة 30 */
-    .plan-card.special-plan {
-      border: 2px solid #f59e0b;
-      background: rgba(245, 158, 11, 0.08);
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
-    }
+    .plan-card.special-plan { border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
 
     .plan-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; }
-    .plan-price { font-size: 20px; font-weight: bold; color: var(--accent-color); margin-bottom: 12px; }
-    .plan-card.special-plan .plan-price { color: #f59e0b; }
+    .plan-ads { font-size: 18px; font-weight: bold; color: #f59e0b; margin-bottom: 12px; }
     .plan-features { list-style: none; text-align: right; font-size: 12px; color: var(--text-sub); margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
     body.ltr .plan-features { text-align: left; }
-    .plan-btn { padding: 8px; background: var(--accent-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .plan-btn { padding: 10px; background: var(--accent-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 999; }
     .overlay.active { display: block; }
+
+    #mediaPreviewContainer { display: none; padding: 10px 20px; background: var(--chat-bg); border-top: 1px solid var(--border-color); align-items: center; gap: 10px; }
+    #mediaPreviewContainer img, #mediaPreviewContainer video { max-height: 60px; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -175,7 +132,7 @@
     <button onclick="toggleLanguage()" class="icon-btn" id="lbl-lang">🌐 English</button>
   </div>
 
-  <!-- المنطقة الرئيسية -->
+  <!-- الشاشة الرئيسية -->
   <div class="main-content">
     <header>
       <button class="icon-btn" onclick="toggleSidebar()">☰</button>
@@ -184,30 +141,34 @@
     </header>
 
     <div class="chat-container" id="chatContainer">
-      <div class="watermark-bg"></div>
-
       <div class="hero-welcome" id="heroWelcome">
         <h1 id="hero-title">OmniFix AI</h1>
-        <p id="hero-desc">المساعد الذكي المتكامل للدردشة وتوليد الصور بالذكاء الاصطناعي بنقرة واحدة.</p>
+        <p id="hero-desc">المساعد الذكي المتكامل للدردشة والمحادثة النصية الذكية بنقرة واحدة.</p>
       </div>
     </div>
 
+    <!-- معاينة الملف المرفق قبل الإرسال -->
+    <div id="mediaPreviewContainer">
+      <span id="previewElement"></span>
+      <button class="delete-chat-btn" onclick="clearMediaAttachment()">✕</button>
+    </div>
+
     <div class="input-container">
-      <input type="text" id="userInput" placeholder="اكتب رسالتك أو طلب الرسم هنا..." onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="add-media-btn" onclick="document.getElementById('fileInput').click()">+</button>
+      <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" onchange="handleFileSelect(event)">
+      <input type="text" id="userInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter') sendMessage()">
       <button onclick="sendMessage()" id="sendBtn">إرسال</button>
     </div>
   </div>
 
-  <!-- نافذة الباقات 30 -->
+  <!-- نافذة الباقات (30 باقة) -->
   <div class="modal" id="plansModal">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 id="modal-title">اختر من بين 30 باقة متاحة</h2>
         <button onclick="closePlans()" class="icon-btn">✕</button>
       </div>
-      <div class="plans-grid" id="plansGrid">
-        <!-- يتم توليد الـ 30 باقة هنا تلقائياً بواسطة JavaScript -->
-      </div>
+      <div class="plans-grid" id="plansGrid"></div>
     </div>
   </div>
 
@@ -215,6 +176,8 @@
     let currentLang = 'ar';
     let chats = JSON.parse(localStorage.getItem('omnifix_chats') || '[]');
     let currentChatId = null;
+    let selectedMediaBase64 = null;
+    let selectedMediaType = null;
 
     const i18n = {
       ar: {
@@ -223,17 +186,15 @@
         plans: "👑 عرض الباقات (30)",
         themeNight: "🌙 الوضع الليلي",
         themeDay: "☀️ الوضع النهاري",
-        placeholder: "اكتب رسالتك أو طلب الرسم هنا...",
+        placeholder: "اكتب رسالتك هنا...",
         send: "إرسال",
         heroTitle: "OmniFix AI",
-        heroDesc: "المساعد الذكي المتكامل للدردشة وتوليد الصور بالذكاء الاصطناعي بنقرة واحدة.",
-        thinking: "جاري التفكير والرسم...",
+        heroDesc: "المساعد الذكي المتكامل للدردشة والمحادثة النصية بنقرة واحدة.",
+        thinking: "جاري التفكير والإجابة...",
         topPlan: "الباقة 1",
         modalTitle: "اختر من بين 30 باقة متاحة",
-        freeText: "مجاناً",
-        currentBtn: "الباقة الحالية",
-        selectBtn: "ترقية الآن",
-        adsCount: "عدد الإعلانات:"
+        watchAd: "🎬 شاهد الإعلان لفتح الباقة",
+        currentBtn: "الباقة الحالية"
       },
       en: {
         newChat: "+ New Chat",
@@ -241,62 +202,51 @@
         plans: "👑 View Plans (30)",
         themeNight: "🌙 Dark Mode",
         themeDay: "☀️ Light Mode",
-        placeholder: "Type a message or image prompt...",
+        placeholder: "Type your message here...",
         send: "Send",
         heroTitle: "OmniFix AI",
-        heroDesc: "All-in-one AI assistant for instant chat and AI image generation.",
-        thinking: "Thinking & Generating...",
+        heroDesc: "All-in-one AI assistant for instant smart text chat.",
+        thinking: "Thinking & Responding...",
         topPlan: "Plan 1",
         modalTitle: "Choose from 30 Available Plans",
-        freeText: "Free",
-        currentBtn: "Current Plan",
-        selectBtn: "Upgrade Now",
-        adsCount: "Ads Count:"
+        watchAd: "🎬 Watch Ad to Unlock",
+        currentBtn: "Current Plan"
       }
     };
 
-    // توليد 30 باقة مع تحديد مدة 24 ساعة للجميع و48 ساعة للباقة 30
     function generatePlans() {
       const grid = document.getElementById('plansGrid');
       grid.innerHTML = '';
       const t = i18n[currentLang];
 
       for (let i = 1; i <= 30; i++) {
-        const adsNum = i * 2; // تزيد بمقدار 2 إعلانات لكل باقة
-        const price = i === 1 ? 0 : (i * 1.99).toFixed(2);
-        
-        // تحديد المدة: الباقة 30 مدتها 48 ساعة وباقي الباقات 24 ساعة
-        const durationText = i === 30 
-          ? (currentLang === 'ar' ? '⏳ المدة: 48 ساعة (خاصة)' : '⏳ Duration: 48 Hours (Special)')
-          : (currentLang === 'ar' ? '⏳ المدة: 24 ساعة' : '⏳ Duration: 24 Hours');
-
+        const adsNeeded = i;
         const card = document.createElement('div');
         card.className = `plan-card ${i === 1 ? 'active-plan' : ''} ${i === 30 ? 'special-plan' : ''}`;
         
         card.innerHTML = `
           <div>
             <div class="plan-title">${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`} ${i === 30 ? '🔥' : ''}</div>
-            <div class="plan-price">${price == 0 ? t.freeText : `$${price}`}</div>
+            <div class="plan-ads">🎬 ${adsNeeded} ${currentLang === 'ar' ? (adsNeeded === 1 ? 'إعلان' : 'إعلانات') : 'Ad(s)'}</div>
             <ul class="plan-features">
-              <li>📺 ${t.adsCount} <b>${adsNum}</b></li>
-              <li>${durationText}</li>
-              <li>⚡ ${currentLang === 'ar' ? 'سرعة الرد:' : 'Speed:'} Level ${i}</li>
-              <li>🎨 ${currentLang === 'ar' ? 'توليد صور بجودة' : 'Image Quality'} ${i === 1 ? 'Standard' : i < 15 ? 'HD' : '4K'}</li>
+              <li>⚡ ${currentLang === 'ar' ? 'سرعة الإجابة:' : 'Speed:'} Level ${i}</li>
+              <li>🧠 ${currentLang === 'ar' ? 'سعة الذكاء والذاكرة:' : 'Intelligence:'} Level ${i}</li>
+              <li>💬 ${currentLang === 'ar' ? 'طول الأجوبة المتاحة:' : 'Max Answer Length:'} ${i * 500} ${currentLang === 'ar' ? 'كلمة' : 'Words'}</li>
             </ul>
           </div>
-          <button class="plan-btn" style="${i === 1 ? 'background:#10b981;' : i === 30 ? 'background: linear-gradient(135deg, #f59e0b, #d97706);' : ''}" onclick="selectPlan(${i}, ${i === 30 ? 48 : 24})">
-            ${i === 1 ? t.currentBtn : t.selectBtn}
+          <button class="plan-btn" style="${i === 1 ? 'background:#10b981;' : i === 30 ? 'background: linear-gradient(135deg, #f59e0b, #d97706);' : ''}" onclick="watchAdForPlan(${i}, ${adsNeeded})">
+            ${i === 1 ? t.currentBtn : t.watchAd}
           </button>
         `;
         grid.appendChild(card);
       }
     }
 
-    function selectPlan(planNumber, hours) {
-      const msg = currentLang === 'ar' 
-        ? `تم الاشتراك في الباقة ${planNumber} بنجاح! المدة المتاحة: ${hours} ساعة.` 
-        : `Successfully subscribed to Plan ${planNumber}! Duration: ${hours} hours.`;
-      alert(msg);
+    function watchAdForPlan(planNum, ads) {
+      if (planNum === 1) return;
+      alert(currentLang === 'ar' 
+        ? `جاري تشغيل ${ads} إعلان لفتح الباقة ${planNum}...` 
+        : `Loading ${ads} ad(s) to unlock Plan ${planNum}...`);
     }
 
     function toggleSidebar() {
@@ -352,7 +302,6 @@
     function clearChatBox() {
       const container = document.getElementById('chatContainer');
       container.innerHTML = `
-        <div class="watermark-bg"></div>
         <div class="hero-welcome" id="heroWelcome">
           <h1>${i18n[currentLang].heroTitle}</h1>
           <p>${i18n[currentLang].heroDesc}</p>
@@ -366,12 +315,36 @@
       const list = document.getElementById('historyList');
       list.innerHTML = '';
       chats.forEach(chat => {
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'history-item-container';
+
         const item = document.createElement('div');
         item.className = 'history-item';
         item.innerText = chat.title;
         item.onclick = () => loadChat(chat.id);
-        list.appendChild(item);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-chat-btn';
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteChat(chat.id);
+        };
+
+        itemContainer.appendChild(item);
+        itemContainer.appendChild(deleteBtn);
+        list.appendChild(itemContainer);
       });
+    }
+
+    function deleteChat(id) {
+      chats = chats.filter(c => c.id !== id);
+      saveChats();
+      renderHistory();
+      if (currentChatId === id) {
+        if (chats.length > 0) loadChat(chats[0].id);
+        else startNewChat();
+      }
     }
 
     function loadChat(id) {
@@ -384,12 +357,39 @@
       if (hero && chat.messages.length > 0) hero.style.display = 'none';
 
       chat.messages.forEach(msg => {
-        appendMessageUI(msg.text, msg.sender, msg.isImage, msg.imageUrl);
+        appendMessageUI(msg.text, msg.sender, msg.mediaUrl, msg.mediaType);
       });
       if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
     }
 
-    function appendMessageUI(text, sender, isImage = false, imageUrl = null) {
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        selectedMediaBase64 = e.target.result;
+        selectedMediaType = file.type.startsWith('image/') ? 'image' : 'video';
+
+        const previewEl = document.getElementById('previewElement');
+        if (selectedMediaType === 'image') {
+          previewEl.innerHTML = `<img src="${selectedMediaBase64}">`;
+        } else {
+          previewEl.innerHTML = `<video src="${selectedMediaBase64}" controls></video>`;
+        }
+        document.getElementById('mediaPreviewContainer').style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearMediaAttachment() {
+      selectedMediaBase64 = null;
+      selectedMediaType = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('mediaPreviewContainer').style.display = 'none';
+    }
+
+    function appendMessageUI(text, sender, mediaUrl = null, mediaType = null) {
       const container = document.getElementById('chatContainer');
       const hero = document.getElementById('heroWelcome');
       if (hero) hero.style.display = 'none';
@@ -397,12 +397,16 @@
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
       
-      if (isImage && imageUrl) {
-        msgDiv.innerHTML = `${text}<br><img src="${imageUrl}" alt="AI Image">`;
-      } else {
-        msgDiv.innerText = text;
+      let html = text || '';
+      if (mediaUrl) {
+        if (mediaType === 'image') {
+          html += `<br><img src="${mediaUrl}" class="preview-media">`;
+        } else if (mediaType === 'video') {
+          html += `<br><video src="${mediaUrl}" controls class="preview-media"></video>`;
+        }
       }
 
+      msgDiv.innerHTML = html;
       container.appendChild(msgDiv);
       container.scrollTop = container.scrollHeight;
       return msgDiv;
@@ -411,24 +415,28 @@
     async function sendMessage() {
       const input = document.getElementById('userInput');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text && !selectedMediaBase64) return;
 
       if (!currentChatId) {
         currentChatId = Date.now();
-        chats.unshift({ id: currentChatId, title: text.substring(0, 20), messages: [] });
+        chats.unshift({ id: currentChatId, title: text.substring(0, 20) || 'مرفق وسائط', messages: [] });
       }
 
       const activeChat = chats.find(c => c.id === currentChatId);
       if (activeChat && activeChat.messages.length === 0) {
-        activeChat.title = text.substring(0, 20);
+        activeChat.title = text.substring(0, 20) || 'مرفق وسائط';
       }
 
-      appendMessageUI(text, 'user');
-      activeChat.messages.push({ text, sender: 'user' });
+      const currentMedia = selectedMediaBase64;
+      const currentType = selectedMediaType;
+
+      appendMessageUI(text, 'user', currentMedia, currentType);
+      activeChat.messages.push({ text, sender: 'user', mediaUrl: currentMedia, mediaType: currentType });
       saveChats();
       renderHistory();
 
       input.value = '';
+      clearMediaAttachment();
 
       const loadingEl = appendMessageUI(i18n[currentLang].thinking, 'bot');
 
@@ -436,17 +444,17 @@
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ 
+            message: text,
+            lang: currentLang,
+            media: currentMedia
+          })
         });
         const data = await response.json();
 
-        if (data.isImage) {
-          loadingEl.innerHTML = `${data.reply}<br><img src="${data.imageUrl}" alt="AI Image">`;
-          activeChat.messages.push({ text: data.reply, sender: 'bot', isImage: true, imageUrl: data.imageUrl });
-        } else {
-          loadingEl.innerText = data.reply;
-          activeChat.messages.push({ text: data.reply, sender: 'bot' });
-        }
+        const replyText = data.reply || '...';
+        loadingEl.innerText = replyText;
+        activeChat.messages.push({ text: replyText, sender: 'bot' });
         saveChats();
       } catch (err) {
         loadingEl.innerText = currentLang === 'ar' ? 'حدث خطأ في الاتصال بالسيرفر.' : 'Server connection error.';
