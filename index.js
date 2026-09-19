@@ -1,73 +1,64 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// إعداد مفتاح API الخاص بـ Gemini من بيئة العمل على Vercel
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// 1. مسار عرض الصفحة الرئيسية index.html فور فتح الموقع
 app.get('/', (req, res) => {
-    res.send('Server is running successfully!');
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// دالة ذكية لإعادة المحاولة تلقائياً عند وجود ضغط
-async function fetchWithRetry(url, options, retries = 3, delay = 1500) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url, options);
-            if (response.ok) return response;
-        } catch (err) {
-            // المحاولة مرة أخرى في حال وجود خطأ في الشبكة
-        }
-        await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    return fetch(url, options);
-}
-
+// 2. مسار استقبال المحادثات والصور
 app.post('/api/chat', async (req, res) => {
-    try {
-        const { message, images } = req.body;
+  try {
+    const { message, images } = req.body;
 
-        const parts = [];
-        // إضافة تعليمات تجعل الذكاء الاصطناعي يجيب باختصار لتفادي الضغط
-        parts.push({ text: "أجب باختصار ووضوح وبطريقة مباشرة دون إطالة:" });
-        
-        if (message) parts.push({ text: message });
+    // استخدام موديل Gemini 3.6 Flash
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
-        if (images && images.length > 0) {
-            images.forEach(imgBase64 => {
-                const base64Data = imgBase64.replace(/^data:image\/\w+;base64,/, "");
-                parts.push({
-                    inline_data: {
-                        mime_type: "image/jpeg",
-                        data: base64Data
-                    }
-                });
-            });
+    let contents = [];
+
+    // معالجة الصور إن وجدت (Base64)
+    if (images && images.length > 0) {
+      images.forEach((imgBase64) => {
+        const matches = imgBase64.match(/^data:(.+);base64,(.+)$/);
+        if (matches) {
+          contents.push({
+            inlineData: {
+              mimeType: matches[1],
+              data: matches[2]
+            }
+          });
         }
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-        const response = await fetchWithRetry(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: parts }] })
-        });
-
-        const data = await response.json();
-
-        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-            const replyText = data.candidates[0].content.parts[0].text;
-            res.json({ reply: replyText });
-        } else {
-            // في حال وجود ضغط شديد جداً، يعطي السيرفر رداً لائقاً بدلاً من الخطأ
-            res.json({ reply: "أنا هنا ومستعد لمساعدتك! يرجى إعادة إرسال سؤالك مرة أخرى." });
-        }
-
-    } catch (error) {
-        res.json({ reply: "حدث أزمة بسيطة في الاتصال، أعد محاولتك الآن وسأجيبك فوراً." });
+      });
     }
+
+    // إضافة نص الرسالة
+    if (message) {
+      contents.push(message);
+    }
+
+    const result = await model.generateContent(contents);
+    const responseText = await result.response.text();
+
+    res.json({ reply: responseText });
+  } catch (error) {
+    console.error('Error generating content:', error);
+    res.status(500).json({ error: error.message || 'حدث خطأ في معالجة الطلب.' });
+  }
+});
+
+// تشغيل السيرفر
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 module.exports = app;
