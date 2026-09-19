@@ -6,10 +6,10 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const app = express();
 
 app.use(cors());
-// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب حتى 20 صورة وفيديو
-app.use(express.json({ limit: '150mb' }));
+app.use(express.json({ limit: '10mb' }));
 
-const API_KEY = "AQ.Ab8RN6IPqy-idLZEo-MDMCkmioXaEuOhipb-x1kCcsijaLI-Og";
+// ضع مفتاح API الخاص بك من Google AI Studio هنا
+const API_KEY = process.env.GEMINI_API_KEY || "ضع_مفتاحك_هنا";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 app.get('/', (req, res) => {
@@ -20,34 +20,44 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, mediaList } = req.body;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+    // استخدام الموديل المستقر gemini-1.5-flash
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     let contents = [];
 
-    // معالجة المرفقات (حتى 20 صورة وفيديو)
+    // معالجة الصور إن وجدت
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
-        const matches = media.data.match(/^data:(.+);base64,(.+)$/);
-        if (matches) {
-          contents.push({
-            inlineData: { mimeType: matches[1], data: matches[2] }
-          });
+        if (media.data) {
+          const matches = media.data.match(/^data:(.+);base64,(.+)$/);
+          if (matches) {
+            contents.push({
+              inlineData: { mimeType: matches[1], data: matches[2] }
+            });
+          }
         }
       });
     }
 
-    // تعليمات النظام لإجبار الرد باللغة العربية
-    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
-
-    contents.push(systemInstruction + (message || ''));
+    const promptText = message || "مرحباً، أجبني بوضوح.";
+    contents.push(promptText);
 
     const result = await model.generateContent(contents);
-    const responseText = await result.response.text();
+    const response = await result.response;
+    const responseText = response.text();
+
+    // التأكد من عدم إرجاع نص فارغ
+    if (!responseText || responseText.trim() === '') {
+      return res.json({ reply: "أهلاً بك! كيف يمكنني مساعدتك اليوم؟" });
+    }
 
     return res.json({ reply: responseText });
 
   } catch (error) {
     console.error('API Error:', error);
-    return res.status(500).json({ error: 'حدث خطأ في السيرفر أثناء معالجة الطلب.' });
+    return res.status(500).json({ 
+      error: 'حدث خطأ أثناء الاتصال بالسيرفر.',
+      details: error.message 
+    });
   }
 });
 
