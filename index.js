@@ -8,8 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// ضع مفتاح الـ API الخاص بك هنا بين التنصيص
-const API_KEY = process.env.GEMINI_API_KEY || "ضع_مفتاحك_هنا";
+// ضع مفتاح الـ API الجديد الخاص بك بين التنصيص هنا
+const API_KEY = process.env.GEMINI_API_KEY || "ضع_مفتاحك_الجديد_هنا";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 app.get('/', (req, res) => {
@@ -20,7 +20,6 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, mediaList } = req.body;
 
-    // استخدام موديل gemini-1.5-flash المتوافق
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     let contents = [];
 
@@ -44,17 +43,12 @@ app.post('/api/chat', async (req, res) => {
     const response = await result.response;
     const responseText = response.text();
 
-    if (!responseText || responseText.trim() === '') {
-      return res.json({ reply: "أهلاً بك! كيف يمكنني مساعدتك؟" });
-    }
-
     return res.json({ reply: responseText });
 
   } catch (error) {
     console.error('API Error:', error);
-    // إرسال تفاصيل الخطأ مباشرة للفرونت إند لمعرفته
     return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ في السيرفر: ' + (error.message || 'خطأ غير معروف')
+      reply: '⚠️ حدث خطأ في السيرفر:\n' + error.message
     });
   }
 });
