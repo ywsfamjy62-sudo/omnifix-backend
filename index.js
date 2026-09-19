@@ -9,32 +9,36 @@ app.use(express.json({ limit: '20mb' }));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// عرض صفحة الواجهة عند فتح الرابط الرئيسي
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// معالجة المحادثات وتوليد الصور
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, images } = req.body;
 
-    // فحص ما إذا كان الطلب عبارة عن أمر لرسم صورة
-    const imageKeywords = ['ارسم', 'انشئ صورة', 'توليد صورة', 'صورة لـ', 'draw', 'generate image', 'create image', 'image of'];
+    // فحص طلب الصور
+    const imageKeywords = ['ارسم', 'انشئ صورة', 'توليد صورة', 'صورة لـ', 'اصنعلي صورة', 'draw', 'generate image', 'create image', 'image of'];
     const isImageRequest = imageKeywords.some(keyword => message && message.toLowerCase().includes(keyword));
 
     if (isImageRequest && (!images || images.length === 0)) {
-      const promptEncoded = encodeURIComponent(message);
-      const imageUrl = `https://pollinations.ai/p/${promptEncoded}?width=1024&height=1024&seed=${Math.floor(Math.random() * 1000)}`;
+      let cleanPrompt = message;
+      imageKeywords.forEach(k => {
+        cleanPrompt = cleanPrompt.replace(new RegExp(k, 'gi'), '');
+      });
+      cleanPrompt = cleanPrompt.trim() || message;
+
+      const promptEncoded = encodeURIComponent(cleanPrompt);
+      const imageUrl = `https://pollinations.ai/p/${promptEncoded}?width=1024&height=1024&seed=${Math.floor(Math.random() * 999999)}&nologo=true`;
       
       return res.json({ 
-        reply: `![Generated Image](${imageUrl})`,
+        reply: `إليك الصورة التي طلبتها:`,
         isImage: true,
         imageUrl: imageUrl 
       });
     }
 
-    // استجابة Gemini للنصوص والصور
+    // محادثة الذكاء الاصطناعي Gemini
     const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
     let contents = [];
 
@@ -54,10 +58,10 @@ app.post('/api/chat', async (req, res) => {
     const result = await model.generateContent(contents);
     const responseText = await result.response.text();
 
-    res.json({ reply: responseText });
+    res.json({ reply: responseText, isImage: false });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ error: error.message || 'حدث خطأ في معالجة الطلب.' });
+    res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب.' });
   }
 });
 
