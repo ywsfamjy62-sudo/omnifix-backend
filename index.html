@@ -74,18 +74,27 @@
     .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px; margin-top: 8px; }
     .media-grid img, .media-grid video { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; }
 
-    /* منطقة معاينة الـ 20 صورة */
+    /* معاينة المرفقات */
     #mediaPreviewArea { display: none; padding: 10px; background: var(--chat-bg); border-top: 1px solid var(--border-color); gap: 8px; overflow-x: auto; }
     .preview-item { position: relative; display: inline-block; flex-shrink: 0; }
     .preview-item img, .preview-item video { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
     .remove-media { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; }
 
-    .input-container { padding: 10px 12px; background: var(--chat-bg); border-top: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center; }
+    /* شريط كتابة مرفوع للأعلى لتجنب أزرار الموبايل */
+    .input-container { 
+      padding: 10px 12px 30px 12px; 
+      padding-bottom: calc(25px + env(safe-area-inset-bottom, 0px)); 
+      background: var(--chat-bg); 
+      border-top: 1px solid var(--border-color); 
+      display: flex; 
+      gap: 8px; 
+      align-items: center; 
+    }
     .input-container input[type="text"] { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 14px; outline: none; }
     .input-container button { padding: 12px 18px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
     .add-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 10px; font-size: 20px; cursor: pointer; }
 
-    /* نافذة الباقات المميزة المصممة من الفيديو */
+    /* نافذة الباقات مع العداد */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 10px; }
     .modal.active { display: flex; }
     .modal-content { background: #0f172a; width: 100%; max-width: 500px; padding: 20px; border-radius: 18px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
@@ -105,6 +114,7 @@
     .plan-act-btn {
       margin-top: 5px; width: 100%; padding: 10px; border: none; border-radius: 8px;
       background: #2563eb; color: white; font-weight: bold; cursor: pointer; font-size: 14px;
+      display: flex; justify-content: center; align-items: center; gap: 6px;
     }
     .plan-act-btn.active { background: #10b981; }
 
@@ -141,7 +151,7 @@
       </div>
     </div>
 
-    <!-- شريط معاينة حتى 20 صورة وفيديو -->
+    <!-- شريط معاينة المرفقات -->
     <div id="mediaPreviewArea"></div>
 
     <div class="input-container">
@@ -152,7 +162,7 @@
     </div>
   </div>
 
-  <!-- نافذة الباقات المحدثة -->
+  <!-- نافذة الباقات -->
   <div class="modal" id="plansModal">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #334155; padding-bottom:10px;">
@@ -166,11 +176,13 @@
   <script>
     let chats = JSON.parse(localStorage.getItem('omnifix_chats') || '[]');
     let currentChatId = null;
-    let selectedFiles = []; // تخزين حتى 20 ملف
+    let selectedFiles = []; 
     let activePlanId = localStorage.getItem('omnifix_active_plan') || 1;
     let planExpiry = localStorage.getItem('omnifix_plan_expiry') || null;
 
-    // مصفوفة الباقات المصممة بالكامل مثل الفيديو الثاني
+    // حفظ التقدم في مشاهدة الإعلانات لكل باقة
+    let adCounters = JSON.parse(localStorage.getItem('omnifix_ad_counters') || '{}');
+
     const plansData = [
       { id: 1, title: "الباقة العادية", desc: "إجابات أصلية أساسية وبسيطة لكل الأسئلة.", ads: 0, hours: 0, icon: "💎" },
       { id: 2, title: "باقة الدقة المتقدمة", desc: "رفع دقة الإجابات وتنسيق أفضل للردود والشروحات.", ads: 1, hours: 24, icon: "🎯" },
@@ -185,13 +197,12 @@
       { id: 11, title: "باقة الملك Google VIP (Power)", desc: "القوة القسوى الشاملة: دمج كافة قدرات المساعد وبأسرع أداء ممكن!", ads: 10, hours: 48, icon: "👑" }
     ];
 
-    // إضافة باقات إضافية لإكمال الـ 30 باقة
     for (let i = 12; i <= 30; i++) {
       plansData.push({
         id: i,
         title: `باقة التطوير الفائق Level ${i}`,
         desc: `تفعيل قدرات سرعة وفحص متقدمة Level ${i} مع أداء مفتوح.`,
-        ads: i - 1,
+        ads: i,
         hours: i > 15 ? 48 : 24,
         icon: "⚡"
       });
@@ -203,6 +214,8 @@
 
       plansData.forEach(plan => {
         const isActive = activePlanId == plan.id;
+        const currentProgress = adCounters[plan.id] || 0;
+
         const card = document.createElement('div');
         card.className = `plan-card-v2 ${isActive ? 'active-plan' : ''}`;
 
@@ -213,13 +226,22 @@
           timerHTML = `<div class="plan-timer">⏱️ مدة التفعيل: ${plan.hours} ساعة</div>`;
         }
 
+        let buttonText = '';
+        if (isActive) {
+          buttonText = '✅ الباقة المفعلة حالياً';
+        } else if (plan.ads === 0) {
+          buttonText = 'تفعيل مجاناً';
+        } else {
+          buttonText = `🎬 مشاهدة إعلان (${currentProgress}/${plan.ads})`;
+        }
+
         card.innerHTML = `
           <div class="badge-ad">${plan.ads === 0 ? 'مجاناً' : `${plan.ads} إعلان`}</div>
           <div class="plan-title">${plan.icon} ${plan.title}</div>
           <div class="plan-desc">${plan.desc}</div>
           ${timerHTML}
-          <button class="plan-act-btn ${isActive ? 'active' : ''}" onclick="activatePlan(${plan.id}, ${plan.ads}, ${plan.hours})">
-            ${isActive ? 'الباقة المفعلة حالياً' : (plan.ads === 0 ? 'تفعيل مجاناً' : `تفعيل (${plan.ads} إعلانات)`)}
+          <button class="plan-act-btn ${isActive ? 'active' : ''}" onclick="handlePlanClick(${plan.id}, ${plan.ads}, ${plan.hours})">
+            ${buttonText}
           </button>
         `;
         list.appendChild(card);
@@ -228,20 +250,36 @@
       updateTopPlanLabel();
     }
 
-    function updateTopPlanLabel() {
-      const activeObj = plansData.find(p => p.id == activePlanId);
-      if (activeObj) {
-        document.getElementById('lbl-top-plan').innerText = activeObj.title;
+    function handlePlanClick(planId, requiredAds, hours) {
+      if (activePlanId == planId) return;
+
+      if (requiredAds === 0) {
+        activatePlan(planId, hours);
+        return;
+      }
+
+      let currentProgress = adCounters[planId] || 0;
+      currentProgress++;
+      adCounters[planId] = currentProgress;
+      localStorage.setItem('omnifix_ad_counters', JSON.stringify(adCounters));
+
+      // في حال دمج التغليف يمكنك استدعاء كود الإعلان من الدالة أدناه
+      if (typeof window.showAd === 'function') {
+        window.showAd(); 
+      } else {
+        alert(`🎬 تم تسجيل مشاهدة الإعلان! العداد الحالي: (${currentProgress}/${requiredAds})`);
+      }
+
+      if (currentProgress >= requiredAds) {
+        adCounters[planId] = 0;
+        localStorage.setItem('omnifix_ad_counters', JSON.stringify(adCounters));
+        activatePlan(planId, hours);
+      } else {
+        renderPlans();
       }
     }
 
-    function activatePlan(planId, ads, hours) {
-      if (activePlanId == planId) return;
-
-      if (ads > 0) {
-        alert(`جاري تشغيل ${ads} إعلانات لتفعيل الباقة...`);
-      }
-
+    function activatePlan(planId, hours) {
       activePlanId = planId;
       localStorage.setItem('omnifix_active_plan', planId);
 
@@ -256,7 +294,14 @@
 
       renderPlans();
       startTimer();
-      alert('تم تفعيل الباقة بنجاح!');
+      alert('🎉 مبروك! اكتمل العداد وتم تفعيل الباقة بنجاح!');
+    }
+
+    function updateTopPlanLabel() {
+      const activeObj = plansData.find(p => p.id == activePlanId);
+      if (activeObj) {
+        document.getElementById('lbl-top-plan').innerText = activeObj.title;
+      }
     }
 
     function startTimer() {
@@ -352,7 +397,6 @@
       if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
     }
 
-    // رفع واختيار حتى 20 صورة/فيديو
     function handleFilesSelect(event) {
       const files = Array.from(event.target.files);
       if (selectedFiles.length + files.length > 20) {
@@ -465,236 +509,6 @@
 
     renderPlans();
     startTimer();
-    if (chats.length > 0) { renderHistory(); loadChat(chats[0].id); }
-    else { startNewChat(); }
-  </script>
-</body>
-</html>
- from 30 Plans",
-        watchAd: "Watch Ads", currentBtn: "Current Plan"
-      }
-    };
-
-    function generatePlans() {
-      const grid = document.getElementById('plansGrid');
-      grid.innerHTML = '';
-      for (let i = 1; i <= 30; i++) {
-        const card = document.createElement('div');
-        card.className = `plan-card ${i === 1 ? 'active-plan' : ''}`;
-        card.innerHTML = `
-          <div><strong>${currentLang === 'ar' ? `الباقة ${i}` : `Plan ${i}`}</strong></div>
-          <div style="color:#f59e0b; margin:5px 0;">🎬 ${i} ${currentLang === 'ar' ? 'إعلان' : 'Ad(s)'}</div>
-          <button class="icon-btn" style="width:100%; margin-top:5px;">${i === 1 ? i18n[currentLang].currentBtn : i18n[currentLang].watchAd}</button>
-        `;
-        grid.appendChild(card);
-      }
-    }
-
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('overlay').classList.toggle('active');
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('light-mode');
-      const isLight = document.body.classList.contains('light-mode');
-      document.getElementById('lbl-theme').innerText = isLight ? i18n[currentLang].themeDay : i18n[currentLang].themeNight;
-    }
-
-    function toggleLanguage() {
-      currentLang = currentLang === 'ar' ? 'en' : 'ar';
-      document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-      
-      document.getElementById('lbl-lang').innerText = currentLang === 'ar' ? '🌐 English' : '🌐 العربية';
-      applyTranslations();
-      generatePlans();
-      renderHistory();
-      if(currentChatId) loadChat(currentChatId);
-    }
-
-    function applyTranslations() {
-      const t = i18n[currentLang];
-      document.getElementById('lbl-new-chat').innerText = t.newChat;
-      document.getElementById('lbl-history').innerText = t.history;
-      document.getElementById('lbl-plans-btn').innerText = t.plans;
-      document.getElementById('lbl-top-plan').innerText = t.topPlan;
-      document.getElementById('userInput').placeholder = t.placeholder;
-      document.getElementById('sendBtn').innerText = t.send;
-      document.getElementById('hero-title').innerText = t.heroTitle;
-      document.getElementById('hero-desc').innerText = t.heroDesc;
-      document.getElementById('modal-title').innerText = t.modalTitle;
-    }
-
-    function openPlans() { document.getElementById('plansModal').classList.add('active'); }
-    function closePlans() { document.getElementById('plansModal').classList.remove('active'); }
-
-    function startNewChat() {
-      currentChatId = Date.now();
-      chats.unshift({ id: currentChatId, title: currentLang === 'ar' ? 'محادثة جديدة' : 'New Chat', messages: [] });
-      saveChats(); renderHistory(); clearChatBox();
-      if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
-    }
-
-    function clearChatBox() {
-      document.getElementById('chatContainer').innerHTML = `
-        <div class="hero-welcome" id="heroWelcome">
-          <h1>${i18n[currentLang].heroTitle}</h1>
-          <p>${i18n[currentLang].heroDesc}</p>
-        </div>
-      `;
-    }
-
-    function saveChats() { localStorage.setItem('omnifix_chats', JSON.stringify(chats)); }
-
-    function renderHistory() {
-      const list = document.getElementById('historyList');
-      list.innerHTML = '';
-      chats.forEach(chat => {
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'history-item-container';
-        itemContainer.innerHTML = `
-          <div class="history-item" onclick="loadChat(${chat.id})">${chat.title}</div>
-          <button class="delete-btn" onclick="deleteChat(event, ${chat.id})">🗑️</button>
-        `;
-        list.appendChild(itemContainer);
-      });
-    }
-
-    function deleteChat(e, id) {
-      e.stopPropagation();
-      chats = chats.filter(c => c.id !== id);
-      saveChats(); renderHistory();
-      if (currentChatId === id) {
-        if (chats.length > 0) loadChat(chats[0].id);
-        else startNewChat();
-      }
-    }
-
-    function loadChat(id) {
-      currentChatId = id;
-      const chat = chats.find(c => c.id === id);
-      if (!chat) return;
-      clearChatBox();
-      const hero = document.getElementById('heroWelcome');
-      if (hero && chat.messages.length > 0) hero.style.display = 'none';
-
-      chat.messages.forEach(msg => appendMessageUI(msg.text, msg.sender, msg.mediaList));
-      if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
-    }
-
-    // التعامل مع إضافة حتى 10 صور أو فيديوهات
-    function handleFilesSelect(event) {
-      const files = Array.from(event.target.files);
-      if (selectedFiles.length + files.length > 10) {
-        alert(currentLang === 'ar' ? 'الحد الأقصى هو 10 ملفات فقط!' : 'Maximum 10 files allowed!');
-        return;
-      }
-
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          selectedFiles.push({
-            data: e.target.result,
-            type: file.type.startsWith('image/') ? 'image' : 'video'
-          });
-          renderMediaPreview();
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function renderMediaPreview() {
-      const area = document.getElementById('mediaPreviewArea');
-      if (selectedFiles.length === 0) {
-        area.style.display = 'none';
-        return;
-      }
-      area.style.display = 'flex';
-      area.innerHTML = '';
-      selectedFiles.forEach((file, index) => {
-        const item = document.createElement('div');
-        item.className = 'preview-item';
-        item.innerHTML = `
-          ${file.type === 'image' ? `<img src="${file.data}">` : `<video src="${file.data}"></video>`}
-          <button class="remove-media" onclick="removeSelectedMedia(${index})">✕</button>
-        `;
-        area.appendChild(item);
-      });
-    }
-
-    function removeSelectedMedia(index) {
-      selectedFiles.splice(index, 1);
-      renderMediaPreview();
-    }
-
-    function appendMessageUI(text, sender, mediaList = []) {
-      const container = document.getElementById('chatContainer');
-      const hero = document.getElementById('heroWelcome');
-      if (hero) hero.style.display = 'none';
-
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-      let html = text || '';
-
-      if (mediaList && mediaList.length > 0) {
-        html += `<div class="media-grid">`;
-        mediaList.forEach(m => {
-          if (m.type === 'image') html += `<img src="${m.data}">`;
-          else html += `<video src="${m.data}" controls></video>`;
-        });
-        html += `</div>`;
-      }
-
-      msgDiv.innerHTML = html;
-      container.appendChild(msgDiv);
-      container.scrollTop = container.scrollHeight;
-      return msgDiv;
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById('userInput');
-      const text = input.value.trim();
-      if (!text && selectedFiles.length === 0) return;
-
-      if (!currentChatId) {
-        currentChatId = Date.now();
-        chats.unshift({ id: currentChatId, title: text.substring(0, 15) || 'ميديا', messages: [] });
-      }
-
-      const activeChat = chats.find(c => c.id === currentChatId);
-      const currentMediaList = [...selectedFiles];
-
-      appendMessageUI(text, 'user', currentMediaList);
-      activeChat.messages.push({ text, sender: 'user', mediaList: currentMediaList });
-      saveChats(); renderHistory();
-
-      input.value = '';
-      selectedFiles = [];
-      renderMediaPreview();
-
-      const loadingEl = appendMessageUI(i18n[currentLang].thinking, 'bot');
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: text,
-            lang: currentLang,
-            mediaList: currentMediaList
-          })
-        });
-        const data = await response.json();
-        const replyText = data.reply || '...';
-        loadingEl.innerText = replyText;
-        activeChat.messages.push({ text: replyText, sender: 'bot' });
-        saveChats();
-      } catch (err) {
-        loadingEl.innerText = currentLang === 'ar' ? 'خطأ في الاتصال.' : 'Connection error.';
-      }
-    }
-
-    generatePlans();
     if (chats.length > 0) { renderHistory(); loadChat(chats[0].id); }
     else { startNewChat(); }
   </script>
