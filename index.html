@@ -80,7 +80,7 @@
     .preview-item img, .preview-item video { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
     .remove-media { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; }
 
-    /* شريط كتابة مرفوع */
+    /* شريط كتابة مرفوع للأعلى لتجنب أزرار الموبايل */
     .input-container { 
       padding: 10px 12px 30px 12px; 
       padding-bottom: calc(25px + env(safe-area-inset-bottom, 0px)); 
@@ -94,7 +94,7 @@
     .input-container button { padding: 12px 18px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
     .add-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 10px; font-size: 20px; cursor: pointer; }
 
-    /* نافذة الباقات */
+    /* نافذة الباقات مع العداد */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 10px; }
     .modal.active { display: flex; }
     .modal-content { background: #0f172a; width: 100%; max-width: 500px; padding: 20px; border-radius: 18px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
@@ -162,7 +162,7 @@
     </div>
   </div>
 
-  <!-- نافذة الباقات مع عداد الإعلانات التفاعلي -->
+  <!-- نافذة الباقات -->
   <div class="modal" id="plansModal">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #334155; padding-bottom:10px;">
@@ -180,7 +180,6 @@
     let activePlanId = localStorage.getItem('omnifix_active_plan') || 1;
     let planExpiry = localStorage.getItem('omnifix_plan_expiry') || null;
 
-    // حفظ التقدم في مشاهدة الإعلانات لكل باقة
     let adCounters = JSON.parse(localStorage.getItem('omnifix_ad_counters') || '{}');
 
     const plansData = [
@@ -253,28 +252,24 @@
     function handlePlanClick(planId, requiredAds, hours) {
       if (activePlanId == planId) return;
 
-      // الباقات المجانية بدون إعلانات
       if (requiredAds === 0) {
         activatePlan(planId, hours);
         return;
       }
 
-      // زيادة عداد مشاهدة الإعلانات للباقة الحالية
       let currentProgress = adCounters[planId] || 0;
       currentProgress++;
       adCounters[planId] = currentProgress;
       localStorage.setItem('omnifix_ad_counters', JSON.stringify(adCounters));
 
-      // محاكاة استدعاء الإعلان (عند التغليف يمكنك وضع كود الإعلان الخاص بـ AppsGeyser هنا)
       if (typeof window.showAd === 'function') {
         window.showAd(); 
       } else {
-        alert(`🎬 تم عرض الإعلان بنجاح! التقدم: (${currentProgress}/${requiredAds})`);
+        alert(`🎬 تم تسجيل مشاهدة الإعلان! العداد الحالي: (${currentProgress}/${requiredAds})`);
       }
 
-      // إذا وصل المستخدم للعدد المطلوب
       if (currentProgress >= requiredAds) {
-        adCounters[planId] = 0; // إعادة ضبط العداد للباقة
+        adCounters[planId] = 0;
         localStorage.setItem('omnifix_ad_counters', JSON.stringify(adCounters));
         activatePlan(planId, hours);
       } else {
@@ -297,7 +292,7 @@
 
       renderPlans();
       startTimer();
-      alert('🎉 مبروك! اكملت مشاهدة الإعلانات وتم تفعيل الباقة بنجاح!');
+      alert('🎉 مبروك! اكتمل العداد وتم تفعيل الباقة بنجاح!');
     }
 
     function updateTopPlanLabel() {
@@ -445,26 +440,34 @@
     }
 
     function appendMessageUI(text, sender, mediaList = []) {
-      const container = document.getElementById('chatContainer');
+      const chatContainer = document.getElementById('chatContainer');
       const hero = document.getElementById('heroWelcome');
       if (hero) hero.style.display = 'none';
 
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
-      let html = text || '';
+      msgDiv.innerText = text;
 
       if (mediaList && mediaList.length > 0) {
-        html += `<div class="media-grid">`;
+        const grid = document.createElement('div');
+        grid.className = 'media-grid';
         mediaList.forEach(m => {
-          if (m.type === 'image') html += `<img src="${m.data}">`;
-          else html += `<video src="${m.data}" controls></video>`;
+          if (m.type === 'image') {
+            const img = document.createElement('img');
+            img.src = m.data;
+            grid.appendChild(img);
+          } else {
+            const video = document.createElement('video');
+            video.src = m.data;
+            video.controls = true;
+            grid.appendChild(video);
+          }
         });
-        html += `</div>`;
+        msgDiv.appendChild(grid);
       }
 
-      msgDiv.innerHTML = html;
-      container.appendChild(msgDiv);
-      container.scrollTop = container.scrollHeight;
+      chatContainer.appendChild(msgDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
       return msgDiv;
     }
 
@@ -475,7 +478,7 @@
 
       if (!currentChatId) {
         currentChatId = Date.now();
-        chats.unshift({ id: currentChatId, title: text.substring(0, 15) || 'وسائط مرفقة', messages: [] });
+        chats.unshift({ id: currentChatId, title: text.substring(0, 15) || 'محادثة وسائط', messages: [] });
       }
 
       const activeChat = chats.find(c => c.id === currentChatId);
@@ -489,7 +492,7 @@
       selectedFiles = [];
       renderMediaPreview();
 
-      const loadingEl = appendMessageUI('جاري التفكير والإجابة...', 'bot');
+      const loadingEl = appendMessageUI('جاري التفكير...', 'bot');
 
       try {
         const response = await fetch('/api/chat', {
@@ -500,20 +503,23 @@
             mediaList: currentMediaList
           })
         });
+
         const data = await response.json();
-        const replyText = data.reply || '...';
+        const replyText = data.reply || data.error || 'لم يتم استلام رد من الذكاء الاصطناعي.';
+
         loadingEl.innerText = replyText;
         activeChat.messages.push({ text: replyText, sender: 'bot' });
         saveChats();
       } catch (err) {
-        loadingEl.innerText = 'حدث خطأ أثناء الاتصال بالسيرفر.';
+        console.error(err);
+        loadingEl.innerText = '⚠️ متعذر الاتصال بالسيرفر. تحقق من الاتصال بالإنترنت.';
       }
     }
 
+    // تهيئة البيانات عند فتح الصفحة
+    renderHistory();
     renderPlans();
-    startTimer();
-    if (chats.length > 0) { renderHistory(); loadChat(chats[0].id); }
-    else { startNewChat(); }
+    if (planExpiry) startTimer();
   </script>
 </body>
 </html>
