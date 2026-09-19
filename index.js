@@ -6,10 +6,10 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب حتى 20 صورة وفيديو
+app.use(express.json({ limit: '150mb' }));
 
-// ضع مفتاح الـ API الجديد الخاص بك بين التنصيص هنا
-const API_KEY = process.env.GEMINI_API_KEY || "ضع_مفتاحك_الجديد_هنا";
+const API_KEY = "AQ.Ab8RN6IPqy-idLZEo-MDMCkmioXaEuOhipb-x1kCcsijaLI-Og";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 app.get('/', (req, res) => {
@@ -20,36 +20,34 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, mediaList } = req.body;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
     let contents = [];
 
+    // معالجة المرفقات (حتى 20 صورة وفيديو)
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
-        if (media.data) {
-          const matches = media.data.match(/^data:(.+);base64,(.+)$/);
-          if (matches) {
-            contents.push({
-              inlineData: { mimeType: matches[1], data: matches[2] }
-            });
-          }
+        const matches = media.data.match(/^data:(.+);base64,(.+)$/);
+        if (matches) {
+          contents.push({
+            inlineData: { mimeType: matches[1], data: matches[2] }
+          });
         }
       });
     }
 
-    const promptText = message || "مرحباً";
-    contents.push(promptText);
+    // تعليمات النظام لإجبار الرد باللغة العربية
+    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
+
+    contents.push(systemInstruction + (message || ''));
 
     const result = await model.generateContent(contents);
-    const response = await result.response;
-    const responseText = response.text();
+    const responseText = await result.response.text();
 
     return res.json({ reply: responseText });
 
   } catch (error) {
     console.error('API Error:', error);
-    return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ في السيرفر:\n' + error.message
-    });
+    return res.status(500).json({ error: 'حدث خطأ في السيرفر أثناء معالجة الطلب.' });
   }
 });
 
