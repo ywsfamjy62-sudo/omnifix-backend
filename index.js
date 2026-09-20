@@ -26,6 +26,7 @@ app.post('/api/chat', async (req, res) => {
 
     let parts = [];
 
+    // معالجة الوسائط المرفقة
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
@@ -45,16 +46,15 @@ app.post('/api/chat', async (req, res) => {
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
     parts.push({ text: systemInstruction + (message || '') });
 
-    // رابط API الرسمي المحدث بخدمة v1beta الرسمية
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+    // رابط API الصحيح والدقيق لنموذج gemini-1.5-flash
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
     const response = await axios.post(
       url,
       { contents: [{ parts: parts }] },
       {
         headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': API_KEY
+          'Content-Type': 'application/json'
         }
       }
     );
