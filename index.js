@@ -29,7 +29,7 @@ app.post('/api/chat', async (req, res) => {
 
     let parts = [];
 
-    // معالجة الصور/الفيديوهات
+    // معالجة الوسائط المرفقة
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
