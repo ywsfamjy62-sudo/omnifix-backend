@@ -1,12 +1,13 @@
 {
-  "name": "omnifix-backend",
+  "name": "omnifix-ai-backend",
   "version": "1.0.0",
+  "description": "OmniFix AI Express Server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.0",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   }
