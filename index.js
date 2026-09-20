@@ -1,17 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
 
 const app = express();
 
 app.use(cors());
-// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب الوسائط المرفقة
 app.use(express.json({ limit: '150mb' }));
 
-// تم وضع مفتاح الـ API الجديد الخاص بك هنا
-const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6INUua-0gQ2wnYqwU-Gvr-_m5zp7c5tvd7uL2VHNbcdZw";
-const genAI = new GoogleGenerativeAI(API_KEY);
+// يقرأ المفتاح من متغيرات البيئة في Vercel أولاً
+const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6JZWRiJGiM-eOAo020xEqsrBBYdMqzam0VAGHfL6v7HLA";
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -21,39 +19,52 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, mediaList } = req.body;
 
-    // استخدام موديل gemini-1.5-flash المستقر والمتوافق
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    let contents = [];
+    let parts = [];
 
-    // معالجة المرفقات (حتى 20 صورة وفيديو)
+    // معالجة الصور والفيديوهات
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
           const matches = media.data.match(/^data:(.+);base64,(.+)$/);
           if (matches) {
-            contents.push({
-              inlineData: { mimeType: matches[1], data: matches[2] }
+            parts.push({
+              inlineData: {
+                mimeType: matches[1],
+                data: matches[2]
+              }
             });
           }
         }
       });
     }
 
-    // تعليمات النظام لإجبار الرد باللغة العربية
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
+    parts.push({ text: systemInstruction + (message || '') });
 
-    contents.push(systemInstruction + (message || ''));
+    // الاتصال المباشر بـ REST API
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-    const result = await model.generateContent(contents);
-    const response = await result.response;
-    const responseText = response.text();
+    const response = await axios.post(
+      url,
+      { contents: [{ parts: parts }] },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        }
+      }
+    );
+
+    const data = response.data;
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "لم يتم استلام نص في الرد.";
 
     return res.json({ reply: responseText });
 
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Error:', error.response?.data || error.message);
+    const errorMessage = error.response?.data?.error?.message || error.message || 'خطأ غير معروف';
     return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ في السيرفر أثناء معالجة الطلب: ' + (error.message || 'خطأ غير معروف')
+      reply: '⚠️ حدث خطأ في السيرفر أثناء معالجة الطلب: ' + errorMessage
     });
   }
 });
