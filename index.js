@@ -6,11 +6,11 @@ const axios = require('axios');
 const app = express();
 
 app.use(cors());
-// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب الصور والفيديوهات المرفقة
+// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب الوسائط المرفقة
 app.use(express.json({ limit: '150mb' }));
 
-// قراءة المفتاح من متغيرات البيئة في Vercel أولاً، أو استخدام المفتاح الاحتياطي
-const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6JZWRiJGiM-eOAo020xEqsrBBYdMqzam0VAGHfL6v7HLA";
+// قراءة المفتاح من متغيرات البيئة في Vercel أولاً، أو القيمة الاحتياطية
+const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6LPC-RALzoXhwb-DAWmkgyrHLZUKu_tTY5Twng0ReFDFg";
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -43,10 +43,10 @@ app.post('/api/chat', async (req, res) => {
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
     parts.push({ text: systemInstruction + (message || '') });
 
-    // رابط API المباشر لـ Gemini 1.5 Flash
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    // الرابط المباشر لـ REST API بدون بارامتر key لعدم إثارة خطأ OAuth2
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
 
-    // إرسال الطلب عبر axios مع إضافة Bearer Token للتوافق مع مفاتيح Google الجديدة
+    // إرسال التوكن حصراً عبر الـ Authorization Header
     const response = await axios.post(
       url,
       { contents: [{ parts: parts }] },
