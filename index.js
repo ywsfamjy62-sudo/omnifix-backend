@@ -6,9 +6,10 @@ const axios = require('axios');
 const app = express();
 
 app.use(cors());
+// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب الصور والفيديوهات المرفقة
 app.use(express.json({ limit: '150mb' }));
 
-// يقرأ المفتاح من متغيرات البيئة في Vercel أولاً
+// قراءة المفتاح من متغيرات البيئة في Vercel أولاً، أو استخدام المفتاح الاحتياطي
 const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6JZWRiJGiM-eOAo020xEqsrBBYdMqzam0VAGHfL6v7HLA";
 
 app.get('/', (req, res) => {
@@ -21,7 +22,7 @@ app.post('/api/chat', async (req, res) => {
 
     let parts = [];
 
-    // معالجة الصور والفيديوهات
+    // معالجة المرفقات (صور وفيديوهات بصيغة Base64)
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
@@ -38,12 +39,14 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    // تعليمات النظام والرسالة
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
     parts.push({ text: systemInstruction + (message || '') });
 
-    // الاتصال المباشر بـ REST API
+    // رابط API المباشر لـ Gemini 1.5 Flash
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
+    // إرسال الطلب عبر axios مع إضافة Bearer Token للتوافق مع مفاتيح Google الجديدة
     const response = await axios.post(
       url,
       { contents: [{ parts: parts }] },
