@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
 // تم وضع مفتاح الـ API الجديد الخاص بك هنا
-const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6JZWRiJGiM-eOAo020xEqsrBBYdMqzam0VAGHfL6v7HLA";
+const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6INUua-0gQ2wnYqwU-Gvr-_m5zp7c5tvd7uL2VHNbcdZw";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 app.get('/', (req, res) => {
