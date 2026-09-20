@@ -6,11 +6,11 @@ const axios = require('axios');
 const app = express();
 
 app.use(cors());
-// زيادة سعة استقبال البيانات لـ 150MB لاستيعاب الصور والفيديوهات
+// رفع سعة استقبال البيانات إلى 150MB لدعم رفع الصور والفيديوهات
 app.use(express.json({ limit: '150mb' }));
 
-// قراءة المفتاح من متغيرات البيئة في Vercel أو المفتاح الاحتياطي
-const API_KEY = process.env.GEMINI_API_KEY || "AQ.Ab8RN6LPC-RALzoXhwb-DAWmkgyrHLZUKu_tTY5Twng0ReFDFg";
+// قراءة المفتاح من متغيرات البيئة في Vercel (GEMINI_API_KEY)
+const API_KEY = process.env.GEMINI_API_KEY;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -20,9 +20,15 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, mediaList } = req.body;
 
+    if (!API_KEY) {
+      return res.status(500).json({ 
+        reply: '⚠️ لم يتم ضبط GEMINI_API_KEY في Vercel! يرجى إضافة المفتاح من إعدادات Vercel.' 
+      });
+    }
+
     let parts = [];
 
-    // معالجة الوسائط (صور / فيديوهات Base64)
+    // معالجة الوسائط المرفقة (صور / فيديوهات بصيغة Base64)
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
@@ -39,14 +45,14 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // تعليمات النظام
+    // تعليمات النظام المخصصة لـ OmniFix AI
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
     parts.push({ text: systemInstruction + (message || '') });
 
-    // رابط API الرسمي مع مفتاح الاستعلام
+    // رابط API الرسمي لنموذج Gemini 1.5 Flash
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-    // إرسال الطلب باستخدام الهيدر المخصص لـ Google API Keys (x-goog-api-key)
+    // إرسال الطلب مع إضافة الهيدر المخصص x-goog-api-key
     const response = await axios.post(
       url,
       { contents: [{ parts: parts }] },
