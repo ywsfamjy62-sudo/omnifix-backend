@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 
@@ -24,9 +24,11 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
     let parts = [];
 
-    // معالجة المرفقات (صور وفيديوهات)
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
@@ -43,32 +45,18 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط وممنوع الرد بأي لغة أخرى إلا إذا طلب المستخدم كوداً برمجياً. قدم الإجابة بدقة ووضوح.]\n\nسؤال المستخدم: ";
-    parts.push({ text: systemInstruction + (message || '') });
+    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
+    parts.push(systemInstruction + (message || ''));
 
-    // رابط API المحدث مع النموذج الجديد الشغال: gemini-2.5-flash
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-    const response = await axios.post(
-      url,
-      { contents: [{ parts: parts }] },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    const data = response.data;
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "لم يتم استلام نص في الرد.";
+    const result = await model.generateContent(parts);
+    const responseText = result.response.text() || "لم يتم استلام نص في الرد.";
 
     return res.json({ reply: responseText });
 
   } catch (error) {
-    console.error('API Error:', error.response?.data || error.message);
-    const errorMessage = error.response?.data?.error?.message || error.message || 'خطأ غير معروف';
+    console.error('API Error:', error);
     return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ في السيرفر أثناء معالجة الطلب: ' + errorMessage
+      reply: '⚠️ حدث خطأ في السيرفر أثناء معالجة الطلب: ' + (error.message || 'خطأ غير معروف')
     });
   }
 });
