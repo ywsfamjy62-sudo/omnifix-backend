@@ -25,7 +25,8 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // استخدام التسمية المستقرة والمحدثة
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     let parts = [];
 
