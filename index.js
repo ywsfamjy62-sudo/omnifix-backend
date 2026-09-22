@@ -25,12 +25,11 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(API_KEY);
-    // تم التغيير إلى النموذج الحديث المعتمد
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // تم التحديث إلى النموذج الجديد المطلوبة رسمياً من جوجل
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
     let parts = [];
 
-    // معالجة الوسائط (الصور والمستندات)
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
