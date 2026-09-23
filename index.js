@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
-// قراءة المفاتيح من متغيرات البيئة في Vercel
+// قراءة مفاتيح API من متغيرات البيئة في Vercel
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const COHERE_API_KEY = process.env.COHERE_API_KEY;
 
@@ -48,13 +48,13 @@ app.post('/api/chat', async (req, res) => {
   const { message, mediaList } = req.body;
   const userText = message || '';
 
-  // 1. المحاولة الأولى: Google Gemini (النموذج الحديث gemini-3.6-flash)
+  // 1. المحاولة الأولى: Google Gemini (النموذج المعتمد والمستقر gemini-1.5-flash)
   try {
     if (GEMINI_API_KEY) {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
       
-      // التعديل المهم جداً: استخدام gemini-3.6-flash
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+      // استخدام النموذج المستقر والتطابق مع Vercel
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       let parts = [];
       if (mediaList && Array.isArray(mediaList)) {
@@ -84,7 +84,7 @@ app.post('/api/chat', async (req, res) => {
     console.warn('⚠️ حدث خطأ أو ضغط في Gemini، جاري التحويل التلقائي إلى Cohere:', geminiError.message);
   }
 
-  // 2. المحاولة الثانية التلقائية: Cohere
+  // 2. المحاولة الثانية التلقائية: Cohere (الخدمة الاحتياطية)
   try {
     const backupReply = await fetchFromCohere(userText);
     return res.json({ reply: backupReply });
