@@ -27,6 +27,8 @@ app.post('/api/chat', async (req, res) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     let parts = [];
+
+    // معالجة الصور والتسجيلات الصوتية (إن وجدت)
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
@@ -40,6 +42,7 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    // تعليمات النظام لإجبار الموديل على الرد بالعربية واسم التطبيق
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
     parts.push(systemInstruction + userText);
 
