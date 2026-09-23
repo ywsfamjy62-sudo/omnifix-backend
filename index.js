@@ -23,7 +23,7 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // قائمة بأقوى النماذج المجانية المتاحة حالياً
+    // استخدام أحدث قائمة من النماذج المجانية المتاحة 100%
     const freeModels = [
       'deepseek/deepseek-r1:free',
       'qwen/qwen-2.5-72b-instruct:free',
@@ -61,7 +61,7 @@ app.post('/api/chat', async (req, res) => {
 
         if (data.choices && data.choices[0] && data.choices[0].message) {
           replyText = data.choices[0].message.content;
-          break; // تم جلب الرد بنجاح، اخرج من الحلقة
+          break; // تم جلب الرد بنجاح من أحد النماذج
         } else {
           lastError = data.error?.message || 'خطأ في النموذج';
         }
@@ -73,7 +73,7 @@ app.post('/api/chat', async (req, res) => {
     if (replyText) {
       return res.json({ reply: replyText });
     } else {
-      return res.status(500).json({ reply: '⚠️ تعذر الاتصال: ' + lastError });
+      return res.status(500).json({ reply: '⚠️ تعذر الاتصال بالنماذج المجانية: ' + lastError });
     }
 
   } catch (error) {
