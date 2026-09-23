@@ -20,15 +20,19 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     if (!GEMINI_API_KEY) {
-      throw new Error('مفتاح GEMINI_API_KEY غير مضاف في متغيرات البيئة');
+      return res.status(500).json({ 
+        reply: '⚠️ خطأ: متغير GEMINI_API_KEY غير مضاف في Vercel.' 
+      });
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    // استخدام نموذج Gemini المستقر والداعم للسرعة والوسائط
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     let parts = [];
 
-    // معالجة الصور والتسجيلات الصوتية (إن وجدت)
+    // معالجة الصور والتسجيلات الصوتية إن وجدت
     if (mediaList && Array.isArray(mediaList)) {
       mediaList.forEach(media => {
         if (media.data) {
@@ -42,7 +46,6 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // تعليمات النظام لإجبار الموديل على الرد بالعربية واسم التطبيق
     const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
     parts.push(systemInstruction + userText);
 
@@ -54,7 +57,7 @@ app.post('/api/chat', async (req, res) => {
   } catch (error) {
     console.error('Gemini API Error:', error);
     return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ أثناء الاتصال بسيرفر Gemini. يرجى المحاولة لاحقاً.' 
+      reply: '⚠️ خطأ من السيرفر: ' + (error.message || 'فشل الاتصال بجيميناي') 
     });
   }
 });
