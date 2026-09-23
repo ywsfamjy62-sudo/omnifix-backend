@@ -23,36 +23,57 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // إرسال الطلب مباشرة لأسرع وأقوى نموذج مجاني ومستقر
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY.trim()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-70b-instruct:free',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.' 
+    // قائمة بأقوى النماذج المجانية المتاحة حالياً
+    const freeModels = [
+      'deepseek/deepseek-r1:free',
+      'qwen/qwen-2.5-72b-instruct:free',
+      'google/gemini-2.0-flash-exp:free',
+      'meta-llama/llama-3.1-8b-instruct:free'
+    ];
+
+    let replyText = null;
+    let lastError = null;
+
+    for (const modelName of freeModels) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY.trim()}`,
+            'Content-Type': 'application/json'
           },
-          { 
-            role: 'user', 
-            content: message || '' 
-          }
-        ]
-      })
-    });
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { 
+                role: 'system', 
+                content: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.' 
+              },
+              { 
+                role: 'user', 
+                content: message || '' 
+              }
+            ]
+          })
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return res.json({ reply: data.choices[0].message.content });
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+          replyText = data.choices[0].message.content;
+          break; // تم جلب الرد بنجاح، اخرج من الحلقة
+        } else {
+          lastError = data.error?.message || 'خطأ في النموذج';
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
+    }
+
+    if (replyText) {
+      return res.json({ reply: replyText });
     } else {
-      console.error('OpenRouter Error:', data);
-      const errDetail = data.error?.message || 'خطأ غير معروف من المصدر';
-      return res.status(500).json({ reply: '⚠️ خطأ في الاستجابة: ' + errDetail });
+      return res.status(500).json({ reply: '⚠️ تعذر الاتصال: ' + lastError });
     }
 
   } catch (error) {
