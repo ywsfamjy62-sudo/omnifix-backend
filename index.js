@@ -8,56 +8,88 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
+// قراءة المفتاحين من متغيرات البيئة
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const COHERE_API_KEY = process.env.COHERE_API_KEY;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// دالة الاتصال بالخدمة الاحتياطية Cohere
+async function fetchFromCohere(userPrompt) {
+  if (!COHERE_API_KEY) {
+    throw new Error('مفتاح COHERE_API_KEY غير مضاف في Vercel');
+  }
+
+  const response = await fetch('https://api.cohere.com/v1/chat', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${COHERE_API_KEY.trim()}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'command-r-plus',
+      message: userPrompt,
+      preamble: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.'
+    })
+  });
+
+  const data = await response.json();
+  
+  if (response.ok && data.text) {
+    return data.text;
+  }
+  
+  throw new Error(data.message || 'فشل الحصول على رد من Cohere');
+}
+
 app.post('/api/chat', async (req, res) => {
   const { message, mediaList } = req.body;
   const userText = message || '';
 
+  // 1. المحاولة الأولى: Google Gemini (الأساسي)
   try {
-    if (!GEMINI_API_KEY) {
-      return res.status(500).json({ 
-        reply: '⚠️ خطأ: متغير GEMINI_API_KEY غير مضاف في Vercel.' 
-      });
-    }
+    if (GEMINI_API_KEY) {
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
-    
-    // استخدام نموذج Gemini المستقر والداعم للسرعة والوسائط
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    let parts = [];
-
-    // معالجة الصور والتسجيلات الصوتية إن وجدت
-    if (mediaList && Array.isArray(mediaList)) {
-      mediaList.forEach(media => {
-        if (media.data) {
-          const matches = media.data.match(/^data:(.+);base64,(.+)$/);
-          if (matches) {
-            parts.push({
-              inlineData: { mimeType: matches[1], data: matches[2] }
-            });
+      let parts = [];
+      if (mediaList && Array.isArray(mediaList)) {
+        mediaList.forEach(media => {
+          if (media.data) {
+            const matches = media.data.match(/^data:(.+);base64,(.+)$/);
+            if (matches) {
+              parts.push({
+                inlineData: { mimeType: matches[1], data: matches[2] }
+              });
+            }
           }
-        }
-      });
+        });
+      }
+
+      const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
+      parts.push(systemInstruction + userText);
+
+      const result = await model.generateContent(parts);
+      const responseText = result.response.text();
+
+      if (responseText) {
+        return res.json({ reply: responseText });
+      }
     }
+  } catch (geminiError) {
+    console.warn('⚠️ حدث ضغط أو خطأ في Gemini، جاري التحويل التلقائي إلى Cohere:', geminiError.message);
+  }
 
-    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
-    parts.push(systemInstruction + userText);
-
-    const result = await model.generateContent(parts);
-    const responseText = result.response.text();
-
-    return res.json({ reply: responseText });
-
-  } catch (error) {
-    console.error('Gemini API Error:', error);
+  // 2. المحاولة الثانية: Cohere (الاحتياطي تلقائياً)
+  try {
+    const backupReply = await fetchFromCohere(userText);
+    return res.json({ reply: backupReply });
+  } catch (backupError) {
+    console.error('⚠️ خطأ في المزودين معاً:', backupError.message);
     return res.status(500).json({ 
-      reply: '⚠️ خطأ من السيرفر: ' + (error.message || 'فشل الاتصال بجيميناي') 
+      reply: '⚠️ السيرفرات تشهد ضغطاً حالياً، يرجى المحاولة بعد قليل.' 
     });
   }
 });
