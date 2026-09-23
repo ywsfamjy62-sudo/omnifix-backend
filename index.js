@@ -8,81 +8,83 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const COHERE_API_KEY = process.env.COHERE_API_KEY;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// دالة مساعدة لإعادة المحاولة عند الضغط 503
-async function generateWithRetry(model, parts, retries = 2) {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await model.generateContent(parts);
-    } catch (err) {
-      const is503 = err.message && err.message.includes('503');
-      if (is503 && i < retries) {
-        // الانتظار ثانية واحدة قبل إعادة المحاولة تلقائياً
-        await new Promise(res => setTimeout(res, 1000));
-        continue;
-      }
-      throw err;
-    }
+// دالة المزود الاحتياطي (Cohere)
+async function fetchFromCohere(userPrompt) {
+  if (!COHERE_API_KEY) throw new Error('مفتاح COHERE_API_KEY غير مضبوط');
+
+  const response = await fetch('https://api.cohere.com/v1/chat', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${COHERE_API_KEY.trim()}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'command-r-plus',
+      message: userPrompt,
+      preamble: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.'
+    })
+  });
+
+  const data = await response.json();
+  if (data.text) {
+    return data.text;
   }
+  throw new Error(data.message || 'فشل الرد من Cohere');
 }
 
 app.post('/api/chat', async (req, res) => {
+  const { message, mediaList } = req.body;
+  const userText = message || '';
+
+  // 1. المحاولة الأولى: Google Gemini (الأساسي)
   try {
-    const { message, mediaList } = req.body;
+    if (GEMINI_API_KEY) {
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    if (!API_KEY) {
-      return res.status(500).json({ 
-        reply: '⚠️ لم يتم ضبط GEMINI_API_KEY في Vercel!' 
-      });
-    }
-
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
-
-    let parts = [];
-
-    if (mediaList && Array.isArray(mediaList)) {
-      mediaList.forEach(media => {
-        if (media.data) {
-          const matches = media.data.match(/^data:(.+);base64,(.+)$/);
-          if (matches) {
-            parts.push({
-              inlineData: {
-                mimeType: matches[1],
-                data: matches[2]
-              }
-            });
+      let parts = [];
+      if (mediaList && Array.isArray(mediaList)) {
+        mediaList.forEach(media => {
+          if (media.data) {
+            const matches = media.data.match(/^data:(.+);base64,(.+)$/);
+            if (matches) {
+              parts.push({
+                inlineData: { mimeType: matches[1], data: matches[2] }
+              });
+            }
           }
-        }
-      });
+        });
+      }
+
+      const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
+      parts.push(systemInstruction + userText);
+
+      const result = await model.generateContent(parts);
+      const responseText = result.response.text();
+
+      if (responseText) {
+        return res.json({ reply: responseText });
+      }
     }
+  } catch (geminiError) {
+    console.warn('⚠️ سيرفر Gemini يعاني من ضغط، جاري التحويل إلى Cohere...', geminiError.message);
+  }
 
-    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
-    parts.push(systemInstruction + (message || ''));
-
-    // استدعاء الدالة الذكية التي تعيد المحاولة في حال وجود ضغط على سيرفرات جوجل
-    const result = await generateWithRetry(model, parts);
-    const responseText = result.response.text() || "لم يتم استلام نص في الرد.";
-
-    return res.json({ reply: responseText });
-
-  } catch (error) {
-    console.error('API Error:', error);
-    
-    // تخصيص رسالة عربية واضحة للمستخدم في حال استمرار الضغط
-    if (error.message && error.message.includes('503')) {
-      return res.status(503).json({
-        reply: '⚠️ السيرفر يشهد ضغطاً عالياً حالياً من جوجل، يرجى إعادة إرسال الرسالة بعد لحظات.'
-      });
-    }
-
+  // 2. المحاولة الثانية: Cohere (الاحتياطي التلقائي)
+  try {
+    const backupReply = await fetchFromCohere(userText);
+    return res.json({ reply: backupReply });
+  } catch (backupError) {
+    console.error('API Error:', backupError);
     return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ في السيرفر أثناء معالجة الطلب: ' + (error.message || 'خطأ غير معروف')
+      reply: '⚠️ السيرفرات تشهد ضغطاً حالياً، يرجى المحاولة بعد قليل.' 
     });
   }
 });
