@@ -23,62 +23,42 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // قائمة بالنماذج المجانية المتاحة بنفس المفتاح للتنقل التلقائي
-    const freeModels = [
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'deepseek/deepseek-r1:free',
-      'qwen/qwen-2.5-72b-instruct:free',
-      'google/gemini-2.0-flash-exp:free'
-    ];
-
-    let replyText = null;
-
-    for (const modelName of freeModels) {
-      try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://omnifix.vercel.app',
-            'X-Title': 'OmniFix AI'
+    // إرسال الطلب مباشرة لأسرع وأقوى نموذج مجاني ومستقر
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY.trim()}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.' 
           },
-          body: JSON.stringify({
-            model: modelName,
-            messages: [
-              { 
-                role: 'system', 
-                content: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.' 
-              },
-              { 
-                role: 'user', 
-                content: message || '' 
-              }
-            ]
-          })
-        });
+          { 
+            role: 'user', 
+            content: message || '' 
+          }
+        ]
+      })
+    });
 
-        const data = await response.json();
+    const data = await response.json();
 
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-          replyText = data.choices[0].message.content;
-          break; // نجاح الطلب، الخروج من الحلقة
-        }
-      } catch (err) {
-        console.warn(`فشل النموذج ${modelName}، جاري تجربة نموذج آخر...`);
-      }
-    }
-
-    if (replyText) {
-      return res.json({ reply: replyText });
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return res.json({ reply: data.choices[0].message.content });
     } else {
-      throw new Error('جميع النماذج المجانية تشهد ضغطاً حالياً.');
+      console.error('OpenRouter Error:', data);
+      const errDetail = data.error?.message || 'خطأ غير معروف من المصدر';
+      return res.status(500).json({ reply: '⚠️ خطأ في الاستجابة: ' + errDetail });
     }
 
   } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({ 
-      reply: '⚠️ حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة بعد قليل.' 
+      reply: '⚠️ حدث خطأ أثناء الاتصال بالسيرفر: ' + error.message 
     });
   }
 });
