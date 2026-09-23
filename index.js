@@ -1,14 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -16,67 +15,70 @@ app.get('/', (req, res) => {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, mediaList } = req.body;
+    const { message } = req.body;
 
-    if (!API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return res.status(500).json({ 
-        reply: '⚠️ لم يتم ضبط GEMINI_API_KEY في Vercel!' 
+        reply: '⚠️ لم يتم ضبط OPENROUTER_API_KEY في Vercel!' 
       });
     }
 
-    const genAI = new GoogleGenerativeAI(API_KEY);
+    // قائمة بالنماذج المجانية المتاحة بنفس المفتاح للتنقل التلقائي
+    const freeModels = [
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'deepseek/deepseek-r1:free',
+      'qwen/qwen-2.5-72b-instruct:free',
+      'google/gemini-2.0-flash-exp:free'
+    ];
 
-    let parts = [];
+    let replyText = null;
 
-    if (mediaList && Array.isArray(mediaList)) {
-      mediaList.forEach(media => {
-        if (media.data) {
-          const matches = media.data.match(/^data:(.+);base64,(.+)$/);
-          if (matches) {
-            parts.push({
-              inlineData: {
-                mimeType: matches[1],
-                data: matches[2]
-              }
-            });
-          }
-        }
-      });
-    }
-
-    const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
-    parts.push(systemInstruction + (message || ''));
-
-    // قائمة بالنماذج المتاحة مرتبة حسب الأفضلية لتفادي ضغط السيرفرات
-    const modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-3.6-flash'];
-    let result = null;
-    let lastError = null;
-
-    for (const modelName of modelsToTry) {
+    for (const modelName of freeModels) {
       try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        result = await model.generateContent(parts);
-        if (result && result.response) {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://omnifix.vercel.app',
+            'X-Title': 'OmniFix AI'
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { 
+                role: 'system', 
+                content: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.' 
+              },
+              { 
+                role: 'user', 
+                content: message || '' 
+              }
+            ]
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+          replyText = data.choices[0].message.content;
           break; // نجاح الطلب، الخروج من الحلقة
         }
       } catch (err) {
-        console.warn(`فشل النموذج ${modelName}، جاري المحاولة بنموذج آخر...`, err.message);
-        lastError = err;
+        console.warn(`فشل النموذج ${modelName}، جاري تجربة نموذج آخر...`);
       }
     }
 
-    if (!result) {
-      throw lastError || new Error('تعذر الاتصال بجميع نماذج الذكاء الاصطناعي حالياً.');
+    if (replyText) {
+      return res.json({ reply: replyText });
+    } else {
+      throw new Error('جميع النماذج المجانية تشهد ضغطاً حالياً.');
     }
-
-    const responseText = result.response.text() || "لم يتم استلام نص في الرد.";
-
-    return res.json({ reply: responseText });
 
   } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({ 
-      reply: '⚠️ السيرفر يشهد ضغطاً شديداً حالياً، يرجى المحاولة بعد قليل.'
+      reply: '⚠️ حدث خطأ أثناء الاتصال بالسيرفر، يرجى المحاولة بعد قليل.' 
     });
   }
 });
