@@ -14,9 +14,9 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 1. دالة Google Gemini المباشرة
+// 1. Gemini
 async function fetchFromGemini(userPrompt, mediaList) {
-  if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY missing');
+  if (!GEMINI_API_KEY) throw new Error('مفتاح GEMINI_API_KEY غير موجود في Vercel');
 
   let parts = [];
   if (mediaList && Array.isArray(mediaList)) {
@@ -44,16 +44,16 @@ async function fetchFromGemini(userPrompt, mediaList) {
   });
 
   const data = await response.json();
-  if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
+  if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
     return data.candidates[0].content.parts[0].text;
   }
   
-  throw new Error(data.error?.message || 'Gemini API Error');
+  throw new Error(`Gemini Error: ${data.error?.message || response.statusText}`);
 }
 
-// 2. دالة Cohere الاحتياطية المباشرة
+// 2. Cohere
 async function fetchFromCohere(userPrompt) {
-  if (!COHERE_API_KEY) throw new Error('COHERE_API_KEY missing');
+  if (!COHERE_API_KEY) throw new Error('مفتاح COHERE_API_KEY غير موجود في Vercel');
 
   const response = await fetch('https://api.cohere.com/v1/chat', {
     method: 'POST',
@@ -73,31 +73,33 @@ async function fetchFromCohere(userPrompt) {
     return data.text;
   }
   
-  throw new Error(data.message || 'Cohere API Error');
+  throw new Error(`Cohere Error: ${data.message || response.statusText}`);
 }
 
 app.post('/api/chat', async (req, res) => {
   const { message, mediaList } = req.body;
   const userText = message || '';
 
-  // التجربة الأولى: Gemini
+  let errors = [];
+
   try {
     const geminiReply = await fetchFromGemini(userText, mediaList);
     return res.json({ reply: geminiReply });
   } catch (geminiError) {
-    console.warn('⚠️ Gemini Failed, Switching to Cohere:', geminiError.message);
+    errors.push(geminiError.message);
   }
 
-  // التجربة الثانية الاحتياطية: Cohere
   try {
     const cohereReply = await fetchFromCohere(userText);
     return res.json({ reply: cohereReply });
   } catch (cohereError) {
-    console.error('⚠️ All Providers Failed:', cohereError.message);
-    return res.status(500).json({ 
-      reply: '⚠️ السيرفرات تشهد ضغطاً حالياً، يرجى المحاولة بعد قليل.' 
-    });
+    errors.push(cohereError.message);
   }
+
+  // إرجاع الأخطاء الدقيقة بدلاً من الرسالة العامة لمعرفة السبب فوراً
+  return res.status(500).json({ 
+    reply: `⚠️ تفاصيل الخطأ:\n1- ${errors[0]}\n2- ${errors[1]}` 
+  });
 });
 
 const PORT = process.env.PORT || 3000;
