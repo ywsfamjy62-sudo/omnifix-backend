@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 1. دالة طلب Gemini المباشرة
+// 1. دالة Google Gemini المباشرة
 async function fetchFromGemini(userPrompt, mediaList) {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY missing');
 
@@ -51,7 +51,7 @@ async function fetchFromGemini(userPrompt, mediaList) {
   throw new Error(data.error?.message || 'Gemini API Error');
 }
 
-// 2. دالة طلب Cohere المباشرة
+// 2. دالة Cohere الاحتياطية المباشرة
 async function fetchFromCohere(userPrompt) {
   if (!COHERE_API_KEY) throw new Error('COHERE_API_KEY missing');
 
@@ -80,7 +80,7 @@ app.post('/api/chat', async (req, res) => {
   const { message, mediaList } = req.body;
   const userText = message || '';
 
-  // محاولة Gemini أولاً
+  // التجربة الأولى: Gemini
   try {
     const geminiReply = await fetchFromGemini(userText, mediaList);
     return res.json({ reply: geminiReply });
@@ -88,7 +88,7 @@ app.post('/api/chat', async (req, res) => {
     console.warn('⚠️ Gemini Failed, Switching to Cohere:', geminiError.message);
   }
 
-  // محاولة Cohere احتياطياً
+  // التجربة الثانية الاحتياطية: Cohere
   try {
     const cohereReply = await fetchFromCohere(userText);
     return res.json({ reply: cohereReply });
