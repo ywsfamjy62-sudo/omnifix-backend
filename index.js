@@ -1,14 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
-// قراءة مفاتيح API من متغيرات البيئة في Vercel
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const COHERE_API_KEY = process.env.COHERE_API_KEY;
 
@@ -16,11 +14,46 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// دالة المزود الاحتياطي (Cohere)
-async function fetchFromCohere(userPrompt) {
-  if (!COHERE_API_KEY) {
-    throw new Error('مفتاح COHERE_API_KEY غير مضاف في Vercel');
+// 1. دالة طلب Gemini المباشرة
+async function fetchFromGemini(userPrompt, mediaList) {
+  if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY missing');
+
+  let parts = [];
+  if (mediaList && Array.isArray(mediaList)) {
+    mediaList.forEach(media => {
+      if (media.data) {
+        const matches = media.data.match(/^data:(.+);base64,(.+)$/);
+        if (matches) {
+          parts.push({
+            inline_data: { mime_type: matches[1], data: matches[2] }
+          });
+        }
+      }
+    });
   }
+
+  const systemPrompt = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
+  parts.push({ text: systemPrompt + userPrompt });
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts }] })
+  });
+
+  const data = await response.json();
+  if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
+    return data.candidates[0].content.parts[0].text;
+  }
+  
+  throw new Error(data.error?.message || 'Gemini API Error');
+}
+
+// 2. دالة طلب Cohere المباشرة
+async function fetchFromCohere(userPrompt) {
+  if (!COHERE_API_KEY) throw new Error('COHERE_API_KEY missing');
 
   const response = await fetch('https://api.cohere.com/v1/chat', {
     method: 'POST',
@@ -36,60 +69,31 @@ async function fetchFromCohere(userPrompt) {
   });
 
   const data = await response.json();
-  
   if (response.ok && data.text) {
     return data.text;
   }
   
-  throw new Error(data.message || 'فشل الحصول على رد من Cohere');
+  throw new Error(data.message || 'Cohere API Error');
 }
 
 app.post('/api/chat', async (req, res) => {
   const { message, mediaList } = req.body;
   const userText = message || '';
 
-  // 1. المحاولة الأولى: Google Gemini (النموذج المعتمد والمستقر gemini-1.5-flash)
+  // محاولة Gemini أولاً
   try {
-    if (GEMINI_API_KEY) {
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
-      
-      // استخدام النموذج المستقر والتطابق مع Vercel
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-      let parts = [];
-      if (mediaList && Array.isArray(mediaList)) {
-        mediaList.forEach(media => {
-          if (media.data) {
-            const matches = media.data.match(/^data:(.+);base64,(.+)$/);
-            if (matches) {
-              parts.push({
-                inlineData: { mimeType: matches[1], data: matches[2] }
-              });
-            }
-          }
-        });
-      }
-
-      const systemInstruction = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
-      parts.push(systemInstruction + userText);
-
-      const result = await model.generateContent(parts);
-      const responseText = result.response.text();
-
-      if (responseText) {
-        return res.json({ reply: responseText });
-      }
-    }
+    const geminiReply = await fetchFromGemini(userText, mediaList);
+    return res.json({ reply: geminiReply });
   } catch (geminiError) {
-    console.warn('⚠️ حدث خطأ أو ضغط في Gemini، جاري التحويل التلقائي إلى Cohere:', geminiError.message);
+    console.warn('⚠️ Gemini Failed, Switching to Cohere:', geminiError.message);
   }
 
-  // 2. المحاولة الثانية التلقائية: Cohere (الخدمة الاحتياطية)
+  // محاولة Cohere احتياطياً
   try {
-    const backupReply = await fetchFromCohere(userText);
-    return res.json({ reply: backupReply });
-  } catch (backupError) {
-    console.error('⚠️ خطأ في المزودين معاً:', backupError.message);
+    const cohereReply = await fetchFromCohere(userText);
+    return res.json({ reply: cohereReply });
+  } catch (cohereError) {
+    console.error('⚠️ All Providers Failed:', cohereError.message);
     return res.status(500).json({ 
       reply: '⚠️ السيرفرات تشهد ضغطاً حالياً، يرجى المحاولة بعد قليل.' 
     });
