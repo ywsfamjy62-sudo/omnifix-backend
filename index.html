@@ -20,15 +20,16 @@
 
     .app-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; position: relative; }
 
-    /* الهيدر العلوي */
+    /* الهيدر العلوي مع العداد التنازلي */
     header {
       background-color: var(--card-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid var(--border-color); height: 60px; flex-shrink: 0; z-index: 10;
     }
     .badge-btn {
       background: #1e293b; color: #fbd38d; border: 1px solid #d69e2e;
-      padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;
+      padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center;
     }
+    .timer-text { font-size: 10px; color: #34d399; margin-top: 2px; }
     .header-title { font-size: 18px; font-weight: bold; color: #2563eb; }
     .header-title span { color: #f3f4f6; }
     .menu-btn {
@@ -36,7 +37,7 @@
       padding: 8px 12px; border-radius: 8px; font-size: 18px; cursor: pointer;
     }
 
-    /* منطقة عرض المحادثة */
+    /* منطقة المحادثة */
     .chat-container { 
       flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 140px; 
       display: flex; flex-direction: column; gap: 18px; width: 100%; 
@@ -49,30 +50,31 @@
     .welcome-card h2 { font-size: 22px; color: #38bdf8; margin-bottom: 10px; }
     .welcome-card p { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
 
-    /* فقاعة سؤال المستخدم (على اليسار) */
+    /* فقاعة سؤال المستخدم مصغرة ومضبوطة */
     .user-msg-wrapper { display: flex; justify-content: flex-start; width: 100%; }
     .user-msg-bubble {
       background: var(--user-bubble); border: 1px solid #3b82f6; border-radius: 16px 16px 0px 16px;
-      padding: 12px 16px; max-width: 80%; color: #fff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      padding: 10px 14px; max-width: 75%; color: #fff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-    .user-msg-bubble img { max-width: 100%; border-radius: 10px; margin-top: 8px; display: block; }
+    /* صورة مصغرة داخل الفقاعة */
+    .user-msg-bubble img { max-width: 140px; max-height: 140px; border-radius: 8px; margin-top: 8px; display: block; object-fit: cover; }
     .msg-meta { font-size: 11px; color: #93c5fd; margin-bottom: 4px; font-weight: bold; }
 
-    /* رد الذكاء الاصطناعي (مكتوب مباشرة على الشاشة بدون مستطيل) */
+    /* إجابة الذكاء الاصطناعي مسترسلة بدون مستطيل */
     .ai-response-text {
       width: 100%; font-size: 15px; line-height: 1.8; color: #f3f4f6;
       padding: 5px 10px; white-space: pre-wrap; word-break: break-word;
     }
 
-    /* معاينة الصورة المحددة فوق شريط الإدخال */
+    /* معاينة الصورة المحددة فوق شريط الكتابة */
     .image-preview-bar {
-      display: none; padding: 8px 12px; background: #111827; border-top: 1px solid var(--border-color);
+      display: none; padding: 6px 12px; background: #111827; border-top: 1px solid var(--border-color);
       align-items: center; gap: 10px; z-index: 99;
     }
-    .image-preview-bar img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid var(--accent-color); }
-    .remove-img-btn { background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+    .image-preview-bar img { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--accent-color); }
+    .remove-img-btn { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 11px; }
 
-    /* شريط الكتابة الإدخالي */
+    /* شريط الإدخال */
     .input-container { 
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 10px 12px 25px 12px; background: var(--card-bg); border-top: 1px solid var(--border-color); 
@@ -88,7 +90,7 @@
     }
     .btn-plus { background: #1e293b; border: 1px solid var(--border-color); font-size: 18px; padding: 10px 14px; }
 
-    /* نافذة الباقات (30 باقة) */
+    /* نافذة الباقات */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; padding: 15px;
@@ -107,22 +109,30 @@
     .time-tag { background: #059669; color: white; padding: 2px 6px; border-radius: 6px; font-size: 11px; }
     .plan-btn { width: 100%; margin-top: 6px; padding: 8px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-    /* القائمة الجانبية */
+    /* القائمة الجانبية وحذف عنصر فردي */
     .sidebar {
       position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
       background: var(--card-bg); border-left: 1px solid var(--border-color);
       z-index: 999; transition: right 0.3s ease; padding: 20px 15px; display: flex; flex-direction: column;
     }
     .sidebar.open { right: 0; }
-    .history-list { flex: 1; overflow-y: auto; margin-top: 15px; }
-    .history-item { padding: 10px; background: #1e293b; border-radius: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-list { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
+    .history-item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #1e293b; border-radius: 8px; padding: 8px 10px; font-size: 13px;
+    }
+    .history-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+    .delete-item-btn { background: transparent; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 2px 6px; }
   </style>
 </head>
 <body>
 
   <div class="app-container">
     <header>
-      <button class="badge-btn" id="currentPlanBtn">الباقة 1 (مجانية) 👑</button>
+      <button class="badge-btn" id="currentPlanBtn">
+        <span id="planNameTitle">الباقة 1 👑</span>
+        <span class="timer-text" id="timerDisplay">غير مفعلة</span>
+      </button>
       <div class="header-title">OmniFix <span>AI</span></div>
       <button class="menu-btn" id="menuBtn">☰</button>
     </header>
@@ -134,10 +144,10 @@
       </div>
     </div>
 
-    <!-- بار معاينة الصور المعلقة -->
+    <!-- شريحة معاينة الصورة المفعلة -->
     <div class="image-preview-bar" id="imagePreviewBar">
       <img id="previewImg" src="" alt="معاينة">
-      <span style="font-size:12px; color:#9ca3af;">تم إرفاق صورة</span>
+      <span style="font-size:12px; color:#9ca3af;">تم اختيار صورة</span>
       <button class="remove-img-btn" id="removeImgBtn">✕</button>
     </div>
 
@@ -153,14 +163,13 @@
   <div class="sidebar" id="sidebar">
     <h3 style="color:#38bdf8;">سجل المحادثات 📜</h3>
     <div class="history-list" id="historyList"></div>
-    <button class="btn-action" id="clearBtn" style="background:#ef4444; margin-top:10px;">مسح السجل 🗑️</button>
-    <button class="btn-action" id="closeSidebarBtn" style="margin-top:8px; background:#4b5563;">إغلاق</button>
+    <button class="btn-action" id="closeSidebarBtn" style="margin-top:15px; background:#4b5563;">إغلاق</button>
   </div>
 
-  <!-- نافذة الباقات (30 باقة) -->
+  <!-- نافذة الباقات -->
   <div class="modal" id="plansModal">
     <div class="modal-content">
-      <h3 style="color:#f3f4f6; border-bottom:1px solid var(--border-color); padding-bottom:8px;">اختر من بين 30 باقة 👑</h3>
+      <h3 style="color:#f3f4f6; border-bottom:1px solid var(--border-color); padding-bottom:8px;">اختر الباقة المناسبة 👑</h3>
       <div id="plansList"></div>
       <button class="btn-action" id="closePlansBtn" style="width:100%; margin-top:15px; background:#4b5563;">إغلاق</button>
     </div>
@@ -170,8 +179,9 @@
     let chatHistory = JSON.parse(localStorage.getItem('omni_history') || '[]');
     let activePlan = 'الباقة 1';
     let selectedImageBase64 = null;
+    let currentAdClick = 0;
+    let timerInterval = null;
 
-    // 1. إنشاء قائمة الـ 30 باقة ديناميكياً مع أوقات عشوائية وإعلانات متصاعدة
     const plansData = [
       "الباقة الأساسية", "باقة Unity 2D", "باقة Unity 3D", "باقة C# Advanced", "باقة Web HTML/CSS",
       "باقة Node.js Server", "باقة Express APIs", "باقة Python Code", "باقة كتابة المقالات", "باقة التعبير الإبداعي",
@@ -187,9 +197,8 @@
       
       plansData.forEach((name, index) => {
         const id = index + 1;
-        const adsCount = id; // عدد الإعلانات يساوي رقم الباقة
-        // وقت التفعيل بين 12 و 48 ساعة بشكل متناسق عشوائي
-        const hours = Math.floor(12 + ((id * 37) % 37)); 
+        const adsCount = id; 
+        const hours = 12; // تثبيت الساعات على 12 ساعة
         
         const card = document.createElement('div');
         card.className = 'plan-card';
@@ -201,34 +210,50 @@
               <span class="time-tag">⏱️ ${hours} ساعة</span>
             </div>
           </div>
-          <button class="plan-btn" onclick="triggerAdWatcher(${id}, '${name}', ${adsCount}, ${hours})">تفعيل الباقة</button>
+          <button class="plan-btn" id="planBtn_${id}" onclick="clickAdHandler(${id}, '${name}', ${adsCount}, ${hours})">مشاهدة الإعلان (1/${adsCount})</button>
         `;
         container.appendChild(card);
       });
     }
 
-    // 2. محاكي عداد الإعلانات (مثال: 1/2 .. 2/2) وتفعيل الباقة
-    function triggerAdWatcher(id, name, totalAds, hours) {
-      let currentAd = 0;
+    // العداد الذي يتطلب الضغط اليدوي لكل إعلان
+    function clickAdHandler(id, name, totalAds, hours) {
+      currentAdClick++;
       
-      function watchNextAd() {
-        currentAd++;
-        alert(`مشاهدة الإعلان (${currentAd}/${totalAds})...`);
-        
-        if (currentAd < totalAds) {
-          setTimeout(watchNextAd, 400);
-        } else {
-          alert(`🎉 مبروك! تم مشاهدة جميع الإعلانات (${totalAds}/${totalAds}).\nتم تفعيل [باقة ${id}: ${name}] بنجاح لمدة ${hours} ساعة!`);
-          activePlan = `باقة ${id}`;
-          document.getElementById('currentPlanBtn').innerText = `باقة ${id} 👑`;
-          document.getElementById('plansModal').style.display = 'none';
-        }
+      if (currentAdClick < totalAds) {
+        alert(`تمت مشاهدة الإعلان (${currentAdClick}/${totalAds}). اضغط مجدداً لمشاهدة الإعلان التالي.`);
+        const btn = document.getElementById(`planBtn_${id}`);
+        if (btn) btn.innerText = `مشاهدة الإعلان (${currentAdClick + 1}/${totalAds})`;
+      } else {
+        alert(`🎉 مبروك! اكملت مشاهدة جميع الإعلانات (${totalAds}/${totalAds}).\nتم تفعيل [باقة ${id}: ${name}] لمدة ${hours} ساعة!`);
+        activePlan = `باقة ${id}`;
+        document.getElementById('planNameTitle').innerText = `باقة ${id} 👑`;
+        document.getElementById('plansModal').style.display = 'none';
+        currentAdClick = 0;
+        startCountdown(hours * 3600);
       }
-      
-      watchNextAd();
     }
 
-    // 3. إدارة اختيار الصور ومعاينتها
+    // عداد الساعات التنازلي المفعل
+    function startCountdown(seconds) {
+      if (timerInterval) clearInterval(timerInterval);
+      let remaining = seconds;
+
+      timerInterval = setInterval(() => {
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('timerDisplay').innerText = 'انتهت الباقة';
+          return;
+        }
+        remaining--;
+        const h = Math.floor(remaining / 3600);
+        const m = Math.floor((remaining % 3600) / 60);
+        const s = remaining % 60;
+        document.getElementById('timerDisplay').innerText = `${h}س:${m}د:${s}ث`;
+      }, 1000);
+    }
+
+    // معاينة وتعيين الصور
     document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
     
     document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -250,7 +275,7 @@
       document.getElementById('imagePreviewBar').style.display = 'none';
     });
 
-    // 4. إرسال المحادثة وعرض النتائج
+    // إرسال المحادثة
     document.getElementById('sendBtn').addEventListener('click', sendQuery);
     document.getElementById('userInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendQuery(); });
 
@@ -263,7 +288,7 @@
       const welcomeCard = document.getElementById('welcomeCard');
       if (welcomeCard) welcomeCard.style.display = 'none';
 
-      // عرض فقاعة سؤال المستخدم على الجانب الأيسر
+      // فقاعة حوار أيسر مع الصورة المصغرة
       const userWrapper = document.createElement('div');
       userWrapper.className = 'user-msg-wrapper';
       
@@ -277,13 +302,11 @@
       `;
       container.appendChild(userWrapper);
 
-      // تفريغ المدخلات والصورة المعلقة
-      const currentImg = selectedImageBase64;
+      const sentImg = selectedImageBase64;
       input.value = '';
       selectedImageBase64 = null;
       document.getElementById('imagePreviewBar').style.display = 'none';
 
-      // عنصر كتابة الإجابة المباشرة للذكاء الاصطناعي (بدون مستطيل)
       const aiResponse = document.createElement('div');
       aiResponse.className = 'ai-response-text';
       aiResponse.innerText = '⏳ جاري المعالجة...';
@@ -295,14 +318,15 @@
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, plan: activePlan, image: currentImg })
+          body: JSON.stringify({ message: text, plan: activePlan, image: sentImg })
         });
 
         const data = await res.json();
         const reply = data.reply || '⚠️ لم تصل إجابة من السيرفر.';
         aiResponse.innerText = reply;
 
-        chatHistory.push({ title: text || 'صورة مرفقة', reply: reply });
+        // حفظ تفاصيل المحادثة بالكامل في السجل
+        chatHistory.push({ title: text || 'صورة مرفقة', image: sentImg, reply: reply });
         localStorage.setItem('omni_history', JSON.stringify(chatHistory));
 
       } catch (err) {
@@ -310,13 +334,9 @@
       }
     }
 
-    // 5. ربط عناصر الواجهة والقائمة الجانبية
-    document.getElementById('currentPlanBtn').addEventListener('click', () => {
-      document.getElementById('plansModal').style.display = 'flex';
-    });
-    document.getElementById('closePlansBtn').addEventListener('click', () => {
-      document.getElementById('plansModal').style.display = 'none';
-    });
+    // إدارة القائمة الجانبية وحذف محادثة فردية
+    document.getElementById('currentPlanBtn').addEventListener('click', () => document.getElementById('plansModal').style.display = 'flex');
+    document.getElementById('closePlansBtn').addEventListener('click', () => document.getElementById('plansModal').style.display = 'none');
     document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
     document.getElementById('closeSidebarBtn').addEventListener('click', toggleSidebar);
 
@@ -329,21 +349,24 @@
       const list = document.getElementById('historyList');
       list.innerHTML = '';
       chatHistory.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerText = item.title;
-        div.onclick = () => loadChat(idx);
-        list.appendChild(div);
+        const row = document.createElement('div');
+        row.className = 'history-item-row';
+        row.innerHTML = `
+          <span class="history-title" onclick="loadChat(${idx})">${item.title}</span>
+          <button class="delete-item-btn" onclick="deleteHistoryItem(${idx})">🗑️</button>
+        `;
+        list.appendChild(row);
       });
     }
 
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      localStorage.removeItem('omni_history');
-      chatHistory = [];
+    // حذف عنصر واحد محدد من المحادثات
+    function deleteHistoryItem(idx) {
+      chatHistory.splice(idx, 1);
+      localStorage.setItem('omni_history', JSON.stringify(chatHistory));
       renderHistory();
-      alert('تم مسح سجل المحادثات.');
-    });
+    }
 
+    // تحميل تفاصيل محادثة سابقة بالكامل
     function loadChat(idx) {
       const item = chatHistory[idx];
       if (!item) return;
@@ -352,7 +375,8 @@
 
       const userWrapper = document.createElement('div');
       userWrapper.className = 'user-msg-wrapper';
-      userWrapper.innerHTML = `<div class="user-msg-bubble">${item.title}</div>`;
+      let imgHTML = item.image ? `<img src="${item.image}" />` : '';
+      userWrapper.innerHTML = `<div class="user-msg-bubble"><div>${item.title}</div>${imgHTML}</div>`;
       container.appendChild(userWrapper);
 
       const aiResponse = document.createElement('div');
@@ -363,7 +387,6 @@
       toggleSidebar();
     }
 
-    // تشغيل القوائم عند الفتح
     generatePlans();
   </script>
 </body>
