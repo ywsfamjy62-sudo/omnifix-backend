@@ -80,9 +80,10 @@
     .preview-item img, .preview-item video { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
     .remove-media { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; }
 
+    /* شريط كتابة مرتفع ومناسب للهواتف */
     .input-container { 
-      padding: 10px 12px 30px 12px; 
-      padding-bottom: calc(25px + env(safe-area-inset-bottom, 0px)); 
+      padding: 10px 12px 25px 12px; 
+      padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); 
       background: var(--chat-bg); 
       border-top: 1px solid var(--border-color); 
       display: flex; 
@@ -93,6 +94,7 @@
     .input-container button { padding: 12px 18px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
     .add-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 10px; font-size: 20px; cursor: pointer; }
 
+    /* نافذة الباقات */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 10px; }
     .modal.active { display: flex; }
     .modal-content { background: #0f172a; width: 100%; max-width: 500px; padding: 20px; border-radius: 18px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
@@ -447,4 +449,72 @@
       msgDiv.innerText = text;
 
       if (mediaList && mediaList.length > 0) {
-        
+        const grid = document.createElement('div');
+        grid.className = 'media-grid';
+        mediaList.forEach(m => {
+          if (m.type === 'image') {
+            grid.innerHTML += `<img src="${m.data}">`;
+          } else {
+            grid.innerHTML += `<video src="${m.data}" controls></video>`;
+          }
+        });
+        msgDiv.appendChild(grid);
+      }
+
+      chatContainer.appendChild(msgDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return msgDiv;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text && selectedFiles.length === 0) return;
+
+      if (!currentChatId) startNewChat();
+
+      const userText = text;
+      const mediaList = [...selectedFiles];
+
+      input.value = '';
+      selectedFiles = [];
+      renderMediaPreview();
+
+      // إظهار رسالة المستخدم
+      appendMessageUI(userText, 'user', mediaList);
+
+      // إظهار رسالة الانتظار
+      const botMsgEl = appendMessageUI('جاري التفكير...', 'bot');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, mediaList: mediaList })
+        });
+
+        const data = await res.json();
+        botMsgEl.innerText = data.reply || "⚠️ لم يصل رد من السيرفر.";
+
+        // حفظ في السجل المحلي
+        const chat = chats.find(c => c.id === currentChatId);
+        if (chat) {
+          if (chat.messages.length === 0) chat.title = userText.slice(0, 20) || 'محادثة جديدة';
+          chat.messages.push({ sender: 'user', text: userText, mediaList: mediaList });
+          chat.messages.push({ sender: 'bot', text: botMsgEl.innerText });
+          saveChats();
+          renderHistory();
+        }
+
+      } catch (err) {
+        botMsgEl.innerText = "⚠️ خطأ في الاتصال:\n" + err.message;
+      }
+    }
+
+    // تهيئة القوائم عند فتح الصفحة
+    if (chats.length > 0) renderHistory();
+    renderPlans();
+  </script>
+</body>
+</html>
+
