@@ -13,6 +13,7 @@
       --text-sub: #9ca3af;
       --accent-color: #2563eb;
       --border-color: #2a364f;
+      --active-green: #10b981;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -20,14 +21,20 @@
 
     .app-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; position: relative; }
 
-    /* الهيدر العلوي مع العداد التنازلي */
+    /* الهيدر العلوي */
     header {
       background-color: var(--card-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid var(--border-color); height: 60px; flex-shrink: 0; z-index: 10;
     }
+    
     .badge-btn {
       background: #1e293b; color: #fbd38d; border: 1px solid #d69e2e;
-      padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+      padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+      transition: all 0.3s ease;
+    }
+    .badge-btn.active-plan-badge {
+      background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
     }
     .timer-text { font-size: 10px; color: #34d399; margin-top: 2px; }
     .header-title { font-size: 18px; font-weight: bold; color: #2563eb; }
@@ -39,7 +46,7 @@
 
     /* منطقة المحادثة */
     .chat-container { 
-      flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 140px; 
+      flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 120px; 
       display: flex; flex-direction: column; gap: 18px; width: 100%; 
     }
 
@@ -50,45 +57,55 @@
     .welcome-card h2 { font-size: 22px; color: #38bdf8; margin-bottom: 10px; }
     .welcome-card p { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
 
-    /* فقاعة سؤال المستخدم مصغرة ومضبوطة */
+    /* فقاعة سؤال المستخدم */
     .user-msg-wrapper { display: flex; justify-content: flex-start; width: 100%; }
     .user-msg-bubble {
       background: var(--user-bubble); border: 1px solid #3b82f6; border-radius: 16px 16px 0px 16px;
       padding: 10px 14px; max-width: 75%; color: #fff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-    /* صورة مصغرة داخل الفقاعة */
     .user-msg-bubble img { max-width: 140px; max-height: 140px; border-radius: 8px; margin-top: 8px; display: block; object-fit: cover; }
     .msg-meta { font-size: 11px; color: #93c5fd; margin-bottom: 4px; font-weight: bold; }
 
-    /* إجابة الذكاء الاصطناعي مسترسلة بدون مستطيل */
     .ai-response-text {
       width: 100%; font-size: 15px; line-height: 1.8; color: #f3f4f6;
       padding: 5px 10px; white-space: pre-wrap; word-break: break-word;
     }
 
-    /* معاينة الصورة المحددة فوق شريط الكتابة */
-    .image-preview-bar {
-      display: none; padding: 6px 12px; background: #111827; border-top: 1px solid var(--border-color);
-      align-items: center; gap: 10px; z-index: 99;
-    }
-    .image-preview-bar img { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--accent-color); }
-    .remove-img-btn { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 11px; }
-
-    /* شريط الإدخال */
+    /* شريط الإدخال المدمج (تظهر فيه الصورة مباشرة بالداخل) */
     .input-container { 
       position: fixed; bottom: 0; left: 0; right: 0;
-      padding: 10px 12px 25px 12px; background: var(--card-bg); border-top: 1px solid var(--border-color); 
+      padding: 10px 12px 20px 12px; background: var(--card-bg); border-top: 1px solid var(--border-color); 
       display: flex; gap: 8px; align-items: center; z-index: 100;
     }
-    .input-container input[type="text"] {
-      flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-color);
-      background: var(--bg-color); color: var(--text-color); font-size: 14px; outline: none; text-align: right;
+    
+    .input-box-wrapper {
+      flex: 1; display: flex; align-items: center; background: var(--bg-color);
+      border: 1px solid var(--border-color); border-radius: 12px; padding: 4px 8px; gap: 6px;
     }
+
+    .input-box-wrapper input[type="text"] {
+      flex: 1; border: none; background: transparent; color: var(--text-color);
+      font-size: 14px; outline: none; text-align: right; padding: 8px 4px;
+    }
+
+    /* تصميم الصورة المصغرة المدمجة داخل شريط الكتابة */
+    .inside-preview-container {
+      display: none; position: relative; align-items: center;
+    }
+    .inside-preview-container img {
+      width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 1px solid var(--active-green);
+    }
+    .inside-remove-btn {
+      position: absolute; top: -6px; right: -6px; background: #ef4444; color: white;
+      border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
     .btn-action {
       padding: 10px 16px; background: var(--accent-color); color: white; border: none;
-      border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer;
+      border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; flex-shrink: 0;
     }
-    .btn-plus { background: #1e293b; border: 1px solid var(--border-color); font-size: 18px; padding: 10px 14px; }
+    .btn-plus { background: transparent; border: none; font-size: 20px; color: var(--text-sub); cursor: pointer; padding: 0 4px; }
 
     /* نافذة الباقات */
     .modal {
@@ -101,21 +118,31 @@
     }
     .plan-card {
       background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px;
-      padding: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 6px;
+      padding: 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; transition: all 0.3s ease;
     }
+    .plan-card.active-plan-card { background: rgba(16, 185, 129, 0.12); border: 2px solid var(--active-green); }
     .plan-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; color: #38bdf8; }
     .plan-tags { display: flex; gap: 6px; }
     .ad-tag { background: #d97706; color: white; padding: 2px 6px; border-radius: 6px; font-size: 11px; }
     .time-tag { background: #059669; color: white; padding: 2px 6px; border-radius: 6px; font-size: 11px; }
     .plan-btn { width: 100%; margin-top: 6px; padding: 8px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .plan-btn.active-btn { background: var(--active-green); cursor: default; }
 
-    /* القائمة الجانبية وحذف عنصر فردي */
+    /* القائمة الجانبية وزر المحادثة الجديدة */
     .sidebar {
       position: fixed; top: 0; right: -300px; width: 280px; height: 100%;
       background: var(--card-bg); border-left: 1px solid var(--border-color);
       z-index: 999; transition: right 0.3s ease; padding: 20px 15px; display: flex; flex-direction: column;
     }
     .sidebar.open { right: 0; }
+    
+    .new-chat-btn {
+      width: 100%; padding: 12px; background: #10b981; color: white; border: none;
+      border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px;
+      display: flex; justify-content: center; align-items: center; gap: 8px; transition: background 0.2s;
+    }
+    .new-chat-btn:hover { background: #059669; }
+
     .history-list { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
     .history-item-row {
       display: flex; justify-content: space-between; align-items: center;
@@ -130,7 +157,7 @@
   <div class="app-container">
     <header>
       <button class="badge-btn" id="currentPlanBtn">
-        <span id="planNameTitle">الباقة 1 👑</span>
+        <span id="planNameTitle">الباقة العادية</span>
         <span class="timer-text" id="timerDisplay">غير مفعلة</span>
       </button>
       <div class="header-title">OmniFix <span>AI</span></div>
@@ -144,24 +171,32 @@
       </div>
     </div>
 
-    <!-- شريحة معاينة الصورة المفعلة -->
-    <div class="image-preview-bar" id="imagePreviewBar">
-      <img id="previewImg" src="" alt="معاينة">
-      <span style="font-size:12px; color:#9ca3af;">تم اختيار صورة</span>
-      <button class="remove-img-btn" id="removeImgBtn">✕</button>
-    </div>
-
+    <!-- شريط الإدخال الموحد -->
     <div class="input-container">
       <button class="btn-action" id="sendBtn">إرسال</button>
-      <input type="text" id="userInput" placeholder="اكتب رسالتك هنا...">
-      <button class="btn-action btn-plus" id="uploadBtn">+</button>
+      
+      <div class="input-box-wrapper">
+        <button class="btn-plus" id="uploadBtn">+</button>
+        <!-- المعاينة داخل شريط الكتابة مباشرة -->
+        <div class="inside-preview-container" id="insidePreviewBar">
+          <img id="previewImg" src="" alt="صورة">
+          <button class="inside-remove-btn" id="removeImgBtn">✕</button>
+        </div>
+        <input type="text" id="userInput" placeholder="اكتب رسالتك هنا...">
+      </div>
+
       <input type="file" id="fileInput" accept="image/*" style="display:none;">
     </div>
   </div>
 
   <!-- القائمة الجانبية -->
   <div class="sidebar" id="sidebar">
-    <h3 style="color:#38bdf8;">سجل المحادثات 📜</h3>
+    <h3 style="color:#38bdf8;">القائمة والسجل 📜</h3>
+    
+    <button class="new-chat-btn" id="newChatBtn">
+      <span>➕</span> محادثة جديدة
+    </button>
+
     <div class="history-list" id="historyList"></div>
     <button class="btn-action" id="closeSidebarBtn" style="margin-top:15px; background:#4b5563;">إغلاق</button>
   </div>
@@ -177,7 +212,8 @@
 
   <script>
     let chatHistory = JSON.parse(localStorage.getItem('omni_history') || '[]');
-    let activePlan = 'الباقة 1';
+    let activePlanId = null;
+    let activePlanName = 'الباقة العادية';
     let selectedImageBase64 = null;
     let currentAdClick = 0;
     let timerInterval = null;
@@ -198,25 +234,30 @@
       plansData.forEach((name, index) => {
         const id = index + 1;
         const adsCount = id; 
-        const hours = 12; // تثبيت الساعات على 12 ساعة
+        const hours = 12;
+        const isCurrentActive = (activePlanId === id);
         
         const card = document.createElement('div');
-        card.className = 'plan-card';
+        card.className = `plan-card ${isCurrentActive ? 'active-plan-card' : ''}`;
+        
+        let buttonHTML = isCurrentActive 
+          ? `<button class="plan-btn active-btn">الباقة الحالية المفعلة ✅</button>`
+          : `<button class="plan-btn" id="planBtn_${id}" onclick="clickAdHandler(${id}, '${name}', ${adsCount}, ${hours})">مشاهدة الإعلان (1/${adsCount})</button>`;
+
         card.innerHTML = `
           <div class="plan-header">
-            <span>باقة ${id}: ${name}</span>
+            <span style="${isCurrentActive ? 'color:#34d399;' : ''}">باقة ${id}: ${name} ${isCurrentActive ? '⚡' : ''}</span>
             <div class="plan-tags">
               <span class="ad-tag">📺 ${adsCount} إعلان</span>
               <span class="time-tag">⏱️ ${hours} ساعة</span>
             </div>
           </div>
-          <button class="plan-btn" id="planBtn_${id}" onclick="clickAdHandler(${id}, '${name}', ${adsCount}, ${hours})">مشاهدة الإعلان (1/${adsCount})</button>
+          ${buttonHTML}
         `;
         container.appendChild(card);
       });
     }
 
-    // العداد الذي يتطلب الضغط اليدوي لكل إعلان
     function clickAdHandler(id, name, totalAds, hours) {
       currentAdClick++;
       
@@ -226,15 +267,21 @@
         if (btn) btn.innerText = `مشاهدة الإعلان (${currentAdClick + 1}/${totalAds})`;
       } else {
         alert(`🎉 مبروك! اكملت مشاهدة جميع الإعلانات (${totalAds}/${totalAds}).\nتم تفعيل [باقة ${id}: ${name}] لمدة ${hours} ساعة!`);
-        activePlan = `باقة ${id}`;
-        document.getElementById('planNameTitle').innerText = `باقة ${id} 👑`;
+        
+        activePlanId = id;
+        activePlanName = `باقة ${id}`;
+        
+        const badgeBtn = document.getElementById('currentPlanBtn');
+        badgeBtn.classList.add('active-plan-badge');
+        document.getElementById('planNameTitle').innerText = `باقة ${id} (مُفعّلة ⚡)`;
+        
         document.getElementById('plansModal').style.display = 'none';
         currentAdClick = 0;
         startCountdown(hours * 3600);
+        generatePlans();
       }
     }
 
-    // عداد الساعات التنازلي المفعل
     function startCountdown(seconds) {
       if (timerInterval) clearInterval(timerInterval);
       let remaining = seconds;
@@ -243,6 +290,9 @@
         if (remaining <= 0) {
           clearInterval(timerInterval);
           document.getElementById('timerDisplay').innerText = 'انتهت الباقة';
+          document.getElementById('currentPlanBtn').classList.remove('active-plan-badge');
+          activePlanId = null;
+          generatePlans();
           return;
         }
         remaining--;
@@ -253,7 +303,7 @@
       }, 1000);
     }
 
-    // معاينة وتعيين الصور
+    // إظهار الصورة داخل شريط الكتابة عند اختيارها
     document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
     
     document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -263,7 +313,7 @@
         reader.onload = function(evt) {
           selectedImageBase64 = evt.target.result;
           document.getElementById('previewImg').src = selectedImageBase64;
-          document.getElementById('imagePreviewBar').style.display = 'flex';
+          document.getElementById('insidePreviewBar').style.display = 'flex';
         };
         reader.readAsDataURL(file);
       }
@@ -272,8 +322,25 @@
     document.getElementById('removeImgBtn').addEventListener('click', () => {
       selectedImageBase64 = null;
       document.getElementById('fileInput').value = '';
-      document.getElementById('imagePreviewBar').style.display = 'none';
+      document.getElementById('insidePreviewBar').style.display = 'none';
     });
+
+    // محادثة جديدة
+    document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+
+    function startNewChat() {
+      const container = document.getElementById('chatContainer');
+      container.innerHTML = `
+        <div class="welcome-card" id="welcomeCard">
+          <h2>OmniFix AI</h2>
+          <p>المساعد الذكي المتكامل للدردشة والمحادثة والنصوص والوسائط.</p>
+        </div>
+      `;
+      document.getElementById('userInput').value = '';
+      selectedImageBase64 = null;
+      document.getElementById('insidePreviewBar').style.display = 'none';
+      toggleSidebar();
+    }
 
     // إرسال المحادثة
     document.getElementById('sendBtn').addEventListener('click', sendQuery);
@@ -288,14 +355,13 @@
       const welcomeCard = document.getElementById('welcomeCard');
       if (welcomeCard) welcomeCard.style.display = 'none';
 
-      // فقاعة حوار أيسر مع الصورة المصغرة
       const userWrapper = document.createElement('div');
       userWrapper.className = 'user-msg-wrapper';
       
       let imgHTML = selectedImageBase64 ? `<img src="${selectedImageBase64}" />` : '';
       userWrapper.innerHTML = `
         <div class="user-msg-bubble">
-          <div class="msg-meta">السؤال (${activePlan})</div>
+          <div class="msg-meta">السؤال (${activePlanName})</div>
           <div>${text}</div>
           ${imgHTML}
         </div>
@@ -305,7 +371,7 @@
       const sentImg = selectedImageBase64;
       input.value = '';
       selectedImageBase64 = null;
-      document.getElementById('imagePreviewBar').style.display = 'none';
+      document.getElementById('insidePreviewBar').style.display = 'none';
 
       const aiResponse = document.createElement('div');
       aiResponse.className = 'ai-response-text';
@@ -315,27 +381,28 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        const res = await fetch('/api/chat', {
+        const res = await fetch('https://omnifix-backend.vercel.app/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, plan: activePlan, image: sentImg })
+          body: JSON.stringify({ message: text, plan: activePlanName, image: sentImg })
         });
 
         const data = await res.json();
         const reply = data.reply || '⚠️ لم تصل إجابة من السيرفر.';
         aiResponse.innerText = reply;
 
-        // حفظ تفاصيل المحادثة بالكامل في السجل
         chatHistory.push({ title: text || 'صورة مرفقة', image: sentImg, reply: reply });
         localStorage.setItem('omni_history', JSON.stringify(chatHistory));
 
       } catch (err) {
-        aiResponse.innerText = '⚠️ خطأ في الاتصال: ' + err.message;
+        aiResponse.innerText = '⚠️ خطأ في الاتصال بالسيرفر: ' + err.message;
       }
     }
 
-    // إدارة القائمة الجانبية وحذف محادثة فردية
-    document.getElementById('currentPlanBtn').addEventListener('click', () => document.getElementById('plansModal').style.display = 'flex');
+    document.getElementById('currentPlanBtn').addEventListener('click', () => {
+      generatePlans();
+      document.getElementById('plansModal').style.display = 'flex';
+    });
     document.getElementById('closePlansBtn').addEventListener('click', () => document.getElementById('plansModal').style.display = 'none');
     document.getElementById('menuBtn').addEventListener('click', toggleSidebar);
     document.getElementById('closeSidebarBtn').addEventListener('click', toggleSidebar);
@@ -359,14 +426,12 @@
       });
     }
 
-    // حذف عنصر واحد محدد من المحادثات
     function deleteHistoryItem(idx) {
       chatHistory.splice(idx, 1);
       localStorage.setItem('omni_history', JSON.stringify(chatHistory));
       renderHistory();
     }
 
-    // تحميل تفاصيل محادثة سابقة بالكامل
     function loadChat(idx) {
       const item = chatHistory[idx];
       if (!item) return;
