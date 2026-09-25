@@ -67,7 +67,7 @@
     .hero-welcome h1 { font-size: 24px; color: #3b82f6; margin-bottom: 8px; }
     .hero-welcome p { color: var(--text-sub); font-size: 14px; }
 
-    .message { max-width: 85%; padding: 12px 16px; border-radius: 14px; line-height: 1.5; font-size: 14px; word-break: break-word; }
+    .message { max-width: 85%; padding: 12px 16px; border-radius: 14px; line-height: 1.5; font-size: 14px; word-break: break-word; white-space: pre-wrap; }
     .user { background-color: var(--user-msg); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
     .bot { background-color: var(--bot-msg); color: var(--text-color); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--border-color); }
 
@@ -80,7 +80,6 @@
     .preview-item img, .preview-item video { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
     .remove-media { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; }
 
-    /* شريط كتابة مرفوع للأعلى لتجنب أزرار الموبايل */
     .input-container { 
       padding: 10px 12px 30px 12px; 
       padding-bottom: calc(25px + env(safe-area-inset-bottom, 0px)); 
@@ -94,7 +93,6 @@
     .input-container button { padding: 12px 18px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
     .add-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px 14px; border-radius: 10px; font-size: 20px; cursor: pointer; }
 
-    /* نافذة الباقات مع العداد */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 10px; }
     .modal.active { display: flex; }
     .modal-content { background: #0f172a; width: 100%; max-width: 500px; padding: 20px; border-radius: 18px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
@@ -449,77 +447,4 @@
       msgDiv.innerText = text;
 
       if (mediaList && mediaList.length > 0) {
-        const grid = document.createElement('div');
-        grid.className = 'media-grid';
-        mediaList.forEach(m => {
-          if (m.type === 'image') {
-            const img = document.createElement('img');
-            img.src = m.data;
-            grid.appendChild(img);
-          } else {
-            const video = document.createElement('video');
-            video.src = m.data;
-            video.controls = true;
-            grid.appendChild(video);
-          }
-        });
-        msgDiv.appendChild(grid);
-      }
-
-      chatContainer.appendChild(msgDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      return msgDiv;
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById('userInput');
-      const text = input.value.trim();
-      if (!text && selectedFiles.length === 0) return;
-
-      if (!currentChatId) {
-        currentChatId = Date.now();
-        chats.unshift({ id: currentChatId, title: text.substring(0, 15) || 'محادثة وسائط', messages: [] });
-      }
-
-      const activeChat = chats.find(c => c.id === currentChatId);
-      const currentMediaList = [...selectedFiles];
-
-      appendMessageUI(text, 'user', currentMediaList);
-      activeChat.messages.push({ text, sender: 'user', mediaList: currentMediaList });
-      saveChats(); renderHistory();
-
-      input.value = '';
-      selectedFiles = [];
-      renderMediaPreview();
-
-      const loadingEl = appendMessageUI('جاري التفكير...', 'bot');
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: text,
-            mediaList: currentMediaList
-          })
-        });
-
-        const data = await response.json();
-        const replyText = data.reply || data.error || 'لم يتم استلام رد من الذكاء الاصطناعي.';
-
-        loadingEl.innerText = replyText;
-        activeChat.messages.push({ text: replyText, sender: 'bot' });
-        saveChats();
-      } catch (err) {
-        console.error(err);
-        loadingEl.innerText = '⚠️ متعذر الاتصال بالسيرفر. تحقق من الاتصال بالإنترنت.';
-      }
-    }
-
-    // تهيئة البيانات عند فتح الصفحة
-    renderHistory();
-    renderPlans();
-    if (planExpiry) startTimer();
-  </script>
-</body>
-</html>
+        
