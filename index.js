@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 
 // 1. Gemini
 async function fetchFromGemini(userPrompt, mediaList) {
-  if (!GEMINI_API_KEY) throw new Error('مفتاح GEMINI_API_KEY غير موجود في Vercel');
+  if (!GEMINI_API_KEY) throw new Error('مفتاح GEMINI_API_KEY غير مضاف في Vercel');
 
   let parts = [];
   if (mediaList && Array.isArray(mediaList)) {
@@ -32,7 +32,7 @@ async function fetchFromGemini(userPrompt, mediaList) {
     });
   }
 
-  const systemPrompt = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.]\n\nسؤال المستخدم: ";
+  const systemPrompt = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية.]\n\nسؤال المستخدم: ";
   parts.push({ text: systemPrompt + userPrompt });
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
@@ -53,7 +53,7 @@ async function fetchFromGemini(userPrompt, mediaList) {
 
 // 2. Cohere
 async function fetchFromCohere(userPrompt) {
-  if (!COHERE_API_KEY) throw new Error('مفتاح COHERE_API_KEY غير موجود في Vercel');
+  if (!COHERE_API_KEY) throw new Error('مفتاح COHERE_API_KEY غير مضاف في Vercel');
 
   const response = await fetch('https://api.cohere.com/v1/chat', {
     method: 'POST',
@@ -64,7 +64,7 @@ async function fetchFromCohere(userPrompt) {
     body: JSON.stringify({
       model: 'command-r-plus',
       message: userPrompt,
-      preamble: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب حصراً باللغة العربية فقط.'
+      preamble: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية.'
     })
   });
 
@@ -96,9 +96,8 @@ app.post('/api/chat', async (req, res) => {
     errors.push(cohereError.message);
   }
 
-  // إرجاع الأخطاء الدقيقة بدلاً من الرسالة العامة لمعرفة السبب فوراً
   return res.status(500).json({ 
-    reply: `⚠️ تفاصيل الخطأ:\n1- ${errors[0]}\n2- ${errors[1]}` 
+    reply: `⚠️ فشل الاتصال بالخدمات:\n1- ${errors[0] || 'خطأ غير معروف'}\n2- ${errors[1] || 'خطأ غير معروف'}` 
   });
 });
 
