@@ -5,14 +5,13 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 
-// إعدادات CORS ورفع الحد الأقصى لحجم البيانات لاستقبال الصور
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// تهيئة مكتبة Google Gemini
+// تهيئة Google Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. الصفحة الرئيسية (لتفادي ظهور الشاشة البيضاء)
+// 1. الصفحة الرئيسية لتفادي الشاشة البيضاء
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'), (err) => {
     if (err) {
@@ -26,17 +25,17 @@ app.get('/', (req, res) => {
   });
 });
 
-// 2. مسار المحادثة وتحليل/تعديل الصور عبر Gemini
+// 2. مسار المحادثة والرد على الأسئلة وتحليل الصور المرفقة
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, image } = req.body;
     
-    // اسم النموذج المعتمد
+    // استخدام اسم النموذج المقبول من جوجل: gemini-2.5-flash
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     let promptParts = [message || ''];
 
-    // إذا أرفق المستخدم صورة للتحليل أو التعديل
+    // في حال أرفق المستخدم صورة مع السؤال
     if (image) {
       const base64Data = image.split(',')[1] || image;
       promptParts.push({
@@ -55,18 +54,15 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// 3. مسار توليد ورسم الصور بالذكاء الاصطناعي (Pollinations API)
+// 3. مسار توليد الصور المجاني بالذكاء الاصطناعي
 app.post('/api/generate-image', (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) {
-      return res.status(400).json({ reply: 'الرجاء كتابة وصف للصورة المطلوب رسمها' });
+      return res.status(400).json({ reply: 'يرجى كتابة وصف للصورة المطلوب رسمها' });
     }
 
-    // تحويل النص ليتناسب مع روابط الـ URL
     const encodedPrompt = encodeURIComponent(prompt);
-    
-    // إنشاء رابط صورة بدقة عالية
     const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=1024&seed=${Math.floor(Math.random() * 100000)}`;
 
     res.json({ imageUrl: imageUrl });
@@ -75,6 +71,4 @@ app.post('/api/generate-image', (req, res) => {
   }
 });
 
-// تصدير التطبيق ليتم تشغيله على Vercel
 module.exports = app;
-  
