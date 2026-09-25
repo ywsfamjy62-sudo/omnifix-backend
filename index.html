@@ -6,12 +6,12 @@
   <title>OmniFix AI</title>
   <style>
     :root {
-      --bg-color: #0b0f19;
-      --card-bg: #161f30;
+      --bg-color: #090d16;
+      --card-bg: #111827;
       --text-color: #f3f4f6;
       --text-sub: #9ca3af;
       --accent-color: #2563eb;
-      --border-color: #2a364f;
+      --border-color: #1f2937;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -24,16 +24,17 @@
       border-bottom: 1px solid var(--border-color); height: 60px;
     }
 
-    .display-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; width: 100%; }
+    /* حاوية العرض على كامل الشاشة */
+    .display-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; width: 100%; }
 
-    /* إلغاء الفقاعات وتحويل العرض إلى صفحة إجابة واسعة */
-    .result-card {
+    /* إلغاء الفقاعات وتحويل العرض إلى بطاقة واسعة ممتدة بعرض الشاشة بالكامل */
+    .full-width-card {
       width: 100%; background: var(--card-bg); border: 1px solid var(--border-color);
-      border-radius: 12px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
-    .query-header {
-      font-size: 16px; font-weight: bold; color: #38bdf8; border-bottom: 1px solid var(--border-color);
+    .query-title {
+      font-size: 15px; font-weight: bold; color: #38bdf8; border-bottom: 1px solid var(--border-color);
       padding-bottom: 8px; margin-bottom: 12px;
     }
 
@@ -44,7 +45,6 @@
     .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 10px; }
     .media-grid img { width: 100%; height: 80px; object-fit: cover; border-radius: 6px; }
 
-    /* شريط الإدخال */
     .input-container { 
       padding: 12px; background: var(--card-bg); border-top: 1px solid var(--border-color); 
       display: flex; gap: 8px; align-items: center;
@@ -69,9 +69,9 @@
     </header>
 
     <div class="display-container" id="displayContainer">
-      <div class="result-card" style="text-align: center; color: var(--text-sub);">
+      <div class="full-width-card" style="text-align: center; color: var(--text-sub);">
         <h2>مرحباً بك في OmniFix AI</h2>
-        <p style="margin-top: 8px;">اكتب أيت استفسار أو سؤال للبحث والحصول على الإجابة مباشرة.</p>
+        <p style="margin-top: 8px;">اكتب أيت سؤال أو استفسار للحصول على الإجابة مباشرة عبر الشاشة كاملة.</p>
       </div>
     </div>
 
@@ -129,9 +129,8 @@
 
       const container = document.getElementById('displayContainer');
 
-      // إنشاء عرض على شكل صفحة نتيجة واسعة
       const card = document.createElement('div');
-      card.className = 'result-card';
+      card.className = 'full-width-card';
 
       let mediaHTML = '';
       if (mediaList.length > 0) {
@@ -139,7 +138,7 @@
       }
 
       card.innerHTML = `
-        <div class="query-header">السؤال: ${userText || 'تحليل الصورة'}</div>
+        <div class="query-title">السؤال: ${userText || 'تحليل الوسائط'}</div>
         ${mediaHTML}
         <div class="response-body">⏳ جاري الإجابة والبحث من Google...</div>
       `;
@@ -157,9 +156,9 @@
         });
 
         const data = await res.json();
-        responseBox.innerText = data.reply || '⚠️ لم تصل أي إجابة من السيرفر.';
+        responseBox.innerText = data.reply || '⚠️ لم تصل إجابة.';
       } catch (err) {
-        responseBox.innerText = '⚠️ حدث خطأ أثناء الاتصال: ' + err.message;
+        responseBox.innerText = '⚠️ خطأ في الاتصال: ' + err.message;
       }
     }
   </script>
