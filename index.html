@@ -15,29 +15,27 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-color); display: flex; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
+    body { background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
 
-    .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; width: 100%; position: relative; }
-
-    /* الشريط العلوي */
+    /* الهيدر العلوي والأزرار */
     header {
       background-color: var(--card-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border-color); height: 60px; z-index: 10;
+      border-bottom: 1px solid var(--border-color); height: 60px; z-index: 100; position: relative;
     }
     .badge-btn {
       background: #1e293b; color: #fbd38d; border: 1px solid #d69e2e;
-      padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; position: relative; z-index: 101;
     }
     .header-title { font-size: 18px; font-weight: bold; color: #2563eb; }
     .header-title span { color: #f3f4f6; }
     .menu-btn {
       background: #1e293b; color: #f3f4f6; border: 1px solid var(--border-color);
-      padding: 6px 12px; border-radius: 8px; font-size: 18px; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-size: 18px; cursor: pointer; position: relative; z-index: 101;
     }
 
     /* منطقة عرض النتائج */
     .display-container { 
-      flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; 
+      flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; 
       display: flex; flex-direction: column; gap: 15px; width: 100%; 
     }
 
@@ -49,7 +47,6 @@
     .welcome-card h2 { font-size: 22px; color: #38bdf8; margin-bottom: 10px; }
     .welcome-card p { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
 
-    /* عرض النتيجة ممتد بعرض الشاشة بدون فقاعات */
     .full-width-result {
       width: 100%; background: var(--card-bg); border: 1px solid var(--border-color);
       border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -57,11 +54,11 @@
     .query-title { font-size: 15px; font-weight: bold; color: #38bdf8; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
     .response-body { font-size: 15px; line-height: 1.7; color: var(--text-color); white-space: pre-wrap; word-break: break-word; }
 
-    /* تثبيت ورفع شريط المدخلات أسفل الشاشة */
+    /* شريط الكتابة المرفوع والمثبت بشكل ظاهر تماماً */
     .input-container { 
       position: fixed; bottom: 0; left: 0; right: 0;
-      padding: 10px 12px 18px 12px; background: var(--card-bg); border-top: 1px solid var(--border-color); 
-      display: flex; gap: 8px; align-items: center; z-index: 20;
+      padding: 12px 12px 24px 12px; background: var(--card-bg); border-top: 1px solid var(--border-color); 
+      display: flex; gap: 8px; align-items: center; z-index: 200;
     }
     .input-container input[type="text"] {
       flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-color);
@@ -76,7 +73,7 @@
     /* نافذة الباقات */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px;
+      background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; padding: 20px;
     }
     .modal-content {
       background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px;
@@ -84,20 +81,20 @@
     }
     .plan-card {
       background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px;
-      padding: 14px; margin-top: 12px; display: flex; flex-direction: column; gap: 6px;
+      padding: 12px; margin-top: 10px;
     }
-    .plan-title { font-weight: bold; color: #38bdf8; font-size: 15px; display: flex; justify-content: space-between; }
-    .ad-tag { background: #d97706; color: white; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+    .plan-title { font-weight: bold; color: #38bdf8; font-size: 14px; display: flex; justify-content: space-between; }
+    .ad-tag { background: #d97706; color: white; padding: 2px 6px; border-radius: 6px; font-size: 11px; }
     .plan-btn {
-      margin-top: 8px; padding: 8px; background: #2563eb; color: white; border: none;
+      width: 100%; margin-top: 8px; padding: 8px; background: #2563eb; color: white; border: none;
       border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center;
     }
 
-    /* القائمة الجانبية لحفظ وتصفح المحادثات */
+    /* القائمة الجانبية للمحادثات */
     .sidebar {
       position: fixed; top: 0; right: -280px; width: 280px; height: 100%;
       background: var(--card-bg); border-left: 1px solid var(--border-color);
-      z-index: 90; transition: 0.3s ease; padding: 20px 15px; display: flex; flex-direction: column;
+      z-index: 250; transition: 0.3s ease; padding: 20px 15px; display: flex; flex-direction: column;
     }
     .sidebar.open { right: 0; }
     .history-list { flex: 1; overflow-y: auto; margin-top: 15px; }
@@ -115,63 +112,64 @@
     <h3 style="color:#38bdf8;">سجل المحادثات 📜</h3>
     <div class="history-list" id="historyList"></div>
     <button class="close-btn" onclick="clearHistory()">مسح السجل 🗑️</button>
-    <button class="btn-action" style="margin-top:8px; background:#4b5563;" onclick="toggleSidebar()">إغلاق القائمة</button>
+    <button class="btn-action" style="margin-top:8px; background:#4b5563;" onclick="toggleSidebar()">إغلاق</button>
   </div>
 
-  <div class="main-content">
-    <header>
-      <button class="badge-btn" id="currentPlanBtn" onclick="openPlans()">الباقة العادية 👑</button>
-      <div class="header-title">OmniFix <span>AI</span></div>
-      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-    </header>
+  <!-- الهيدر العلوي -->
+  <header>
+    <button class="badge-btn" id="currentPlanBtn" onclick="openPlans()">الباقة العادية 👑</button>
+    <div class="header-title">OmniFix <span>AI</span></div>
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+  </header>
 
-    <div class="display-container" id="displayContainer">
-      <div class="welcome-card" id="welcomeCard">
-        <h2>OmniFix AI</h2>
-        <p>المساعد الذكي المتكامل للدردشة والمحادثة والنصوص والوسائط.</p>
-      </div>
-    </div>
-
-    <div class="input-container">
-      <button class="btn-action" onclick="sendQuery()">إرسال</button>
-      <input type="text" id="userInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter') sendQuery()">
-      <button class="btn-action btn-plus" onclick="document.getElementById('fileInput').click()">+</button>
-      <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;">
+  <!-- حاوية المحتوى -->
+  <div class="display-container" id="displayContainer">
+    <div class="welcome-card" id="welcomeCard">
+      <h2>OmniFix AI</h2>
+      <p>المساعد الذكي المتكامل للدردشة والمحادثة والنصوص والوسائط.</p>
     </div>
   </div>
 
-  <!-- نافذة اختيار الباقات والإعلانات -->
+  <!-- شريط الإدخال المرفوع والمعالج -->
+  <div class="input-container">
+    <button class="btn-action" onclick="sendQuery()">إرسال</button>
+    <input type="text" id="userInput" placeholder="اكتب رسالتك هنا..." onkeydown="if(event.key==='Enter') sendQuery()">
+    <button class="btn-action btn-plus" onclick="document.getElementById('fileInput').click()">+</button>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;">
+  </div>
+
+  <!-- نافذة الباقات والإعلانات -->
   <div class="modal" id="plansModal">
     <div class="modal-content">
-      <h3 style="color:#f3f4f6; border-bottom:1px solid var(--border-color); padding-bottom:8px;">اختر باقة الذكاء الاصطناعي 👑</h3>
+      <h3 style="color:#f3f4f6; border-bottom:1px solid var(--border-color); padding-bottom:8px;">اختر الباقة المناسبة 👑</h3>
       
       <div class="plan-card">
         <div class="plan-title">1. الباقة العادية <span class="ad-tag">📺 1 إعلان</span></div>
-        <p style="font-size:12px; color:#9ca3af;">محادثات وإجابات سريعة وخفيفة.</p>
+        <p style="font-size:12px; color:#9ca3af;">محادثات وإجابات سريعة.</p>
         <button class="plan-btn" onclick="selectPlan('الباقة العادية', 1)">شاهد 1 إعلان لتفعيل الباقة</button>
       </div>
 
       <div class="plan-card">
         <div class="plan-title">2. باقة Unity & C# <span class="ad-tag">📺 2 إعلان</span></div>
-        <p style="font-size:12px; color:#9ca3af;">متخصصة في بناء ألعاب Unity، الأكواد، وإصلاح البرمجة.</p>
+        <p style="font-size:12px; color:#9ca3af;">تطوير ألعاب Unity وتعديل الأكواد.</p>
         <button class="plan-btn" onclick="selectPlan('باقة Unity', 2)">شاهد 2 إعلان لتفعيل الباقة</button>
       </div>
 
       <div class="plan-card">
         <div class="plan-title">3. باقة البرمجة الشاملة <span class="ad-tag">📺 3 إعلانات</span></div>
-        <p style="font-size:12px; color:#9ca3af;">تطوير موقع ويب كامل، سيرفرات Node.js و Express.</p>
+        <p style="font-size:12px; color:#9ca3af;">تطوير مواقع وسيرفرات Node.js.</p>
         <button class="plan-btn" onclick="selectPlan('باقة البرمجة', 3)">شاهد 3 إعلانات لتفعيل الباقة</button>
       </div>
 
       <div class="plan-card">
-        <div class="plan-title">4. باقة التعبير والمحتوى <span class="ad-tag">📺 4 إعلانات</span></div>
-        <p style="font-size:12px; color:#9ca3af;">كتابة مقالات طويلة، نصوص إبداعية وتحليل وسائط معقدة.</p>
+        <div class="plan-title">4. باقة المحتوى <span class="ad-tag">📺 4 إعلانات</span></div>
+        <p style="font-size:12px; color:#9ca3af;">مقالات ونصوص إبداعية وتحليل وسائط.</p>
         <button class="plan-btn" onclick="selectPlan('باقة المحتوى', 4)">شاهد 4 إعلانات لتفعيل الباقة</button>
       </div>
 
       <div class="plan-card">
-        <div class="plan-title">5. باقة OmniFix الخارقة <span class="ad-tag">📺 5 إعلانات</span></div>
-        <p style="font-size:12px; color:#9ca3af;">أعلى إمكانيات الذكاء الاصطناعي والتحليل المعقد بدون حدود.</p>
+        <div class="plan-title">5. باقة الذكاء الخارق <span class="ad-tag">📺 5 إعلانات</span></div>
+        <p style="font-size:12px; color:#9ca3af;">أعلى دقة ومعالجة معقدة.</p>
         <button class="plan-btn" onclick="selectPlan('باقة الذكاء الخارق', 5)">شاهد 5 إعلانات لتفعيل الباقة</button>
       </div>
 
@@ -204,15 +202,14 @@
       localStorage.removeItem('omni_history');
       chatHistory = [];
       renderHistory();
-      alert('تم مسح كل المحادثات.');
+      alert('تم مسح السجل.');
     }
 
     function openPlans() { document.getElementById('plansModal').style.display = 'flex'; }
     function closePlans() { document.getElementById('plansModal').style.display = 'none'; }
 
     function selectPlan(planName, adCount) {
-      alert(`سيتم عرض ${adCount} إعلان الآن لتفعيل (${planName}).`);
-      // هنا يمكنك ربط شبكة الإعلانات الخاصة بك (مثل AdMob أو Unity Ads)
+      alert(`سيتم فتح ${adCount} إعلان لتفعيل (${planName}).`);
       activePlan = planName;
       document.getElementById('currentPlanBtn').innerText = `${planName} 👑`;
       closePlans();
@@ -233,7 +230,7 @@
       card.className = 'full-width-result';
       card.innerHTML = `
         <div class="query-title">السؤال (${activePlan}): ${text}</div>
-        <div class="response-body">⏳ جاري المعالجة الإجابة...</div>
+        <div class="response-body">⏳ جاري المعالجة...</div>
       `;
 
       container.appendChild(card);
