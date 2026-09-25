@@ -8,10 +8,9 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// مفتاح Gemini API من إعدادات Vercel
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// الصفحة الرئيسية (لتفادي الشاشة البيضاء)
+// 1. الصفحة الرئيسية
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'), (err) => {
     if (err) {
@@ -25,17 +24,16 @@ app.get('/', (req, res) => {
   });
 });
 
-// مسار الشات وتحليل الصور المرفقة فقط
+// 2. مسار الشات المحدث باسم النموذج المطلوب بالضبط
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, image } = req.body;
     
-    // اسم النموذج المعتمد والرسمي من جوجل
+    // اسم النموذج الجديد المطلوب في رسالة الخطأ
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     let promptParts = [message || ''];
 
-    // في حال إرفاق صورة مع السؤال
     if (image) {
       const base64Data = image.split(',')[1] || image;
       promptParts.push({
