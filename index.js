@@ -8,15 +8,18 @@ app.use(cors());
 app.use(express.json({ limit: '150mb' }));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const COHERE_API_KEY = process.env.COHERE_API_KEY;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 1. Gemini
-async function fetchFromGemini(userPrompt, mediaList) {
-  if (!GEMINI_API_KEY) throw new Error('مفتاح GEMINI_API_KEY غير مضاف في Vercel');
+app.post('/api/chat', async (req, res) => {
+  const { message, mediaList } = req.body;
+  const userText = message || '';
+
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ reply: '⚠️ مفتاح GEMINI_API_KEY غير مضاف في Vercel' });
+  }
 
   let parts = [];
   if (mediaList && Array.isArray(mediaList)) {
@@ -25,51 +28,6 @@ async function fetchFromGemini(userPrompt, mediaList) {
         const matches = media.data.match(/^data:(.+);base64,(.+)$/);
         if (matches) {
           parts.push({
-      async function sendMessage() {
-      const input = document.getElementById('userInput');
-      const text = input.value.trim();
-      if (!text && selectedFiles.length === 0) return;
-
-      if (!currentChatId) startNewChat();
-
-      const userText = text;
-      const mediaList = [...selectedFiles];
-
-      input.value = '';
-      selectedFiles = [];
-      renderMediaPreview();
-
-      // إضافة رسالة المستخدم للشاشة
-      appendMessageUI(userText, 'user', mediaList);
-
-      // إضافة رسالة الانتظار
-      const botMsgEl = appendMessageUI('جاري التفكير...', 'bot');
-
-      try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userText, mediaList: mediaList })
-        });
-
-        const data = await res.json();
-        botMsgEl.innerText = data.reply || "⚠️ لم يصل رد من السيرفر.";
-
-        // حفظ المحادثة
-        const chat = chats.find(c => c.id === currentChatId);
-        if (chat) {
-          if (chat.messages.length === 0) chat.title = userText.slice(0, 20) || 'محادثة جديدة';
-          chat.messages.push({ sender: 'user', text: userText, mediaList: mediaList });
-          chat.messages.push({ sender: 'bot', text: botMsgEl.innerText });
-          saveChats();
-          renderHistory();
-        }
-
-      } catch (err) {
-        botMsgEl.innerText = "⚠️ خطأ في الاتصال:\n" + err.message;
-      }
-      }
-            
             inline_data: { mime_type: matches[1], data: matches[2] }
           });
         }
@@ -77,73 +35,36 @@ async function fetchFromGemini(userPrompt, mediaList) {
     });
   }
 
-  const systemPrompt = "[تعليمات النظام: أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية.]\n\nسؤال المستخدم: ";
-  parts.push({ text: systemPrompt + userPrompt });
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts }] })
-  });
-
-  const data = await response.json();
-  if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-    return data.candidates[0].content.parts[0].text;
-  }
-  
-  throw new Error(`Gemini Error: ${data.error?.message || response.statusText}`);
-}
-
-// 2. Cohere
-async function fetchFromCohere(userPrompt) {
-  if (!COHERE_API_KEY) throw new Error('مفتاح COHERE_API_KEY غير مضاف في Vercel');
-
-  const response = await fetch('https://api.cohere.com/v1/chat', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${COHERE_API_KEY.trim()}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'command-r-plus',
-      message: userPrompt,
-      preamble: 'أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية.'
-    })
-  });
-
-  const data = await response.json();
-  if (response.ok && data.text) {
-    return data.text;
-  }
-  
-  throw new Error(`Cohere Error: ${data.message || response.statusText}`);
-}
-
-app.post('/api/chat', async (req, res) => {
-  const { message, mediaList } = req.body;
-  const userText = message || '';
-
-  let errors = [];
+  const systemPrompt = "أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية بأسلوب منظم وواضح وخالٍ من التعقيدات.\n\nسؤال المستخدم: ";
+  parts.push({ text: systemPrompt + userText });
 
   try {
-    const geminiReply = await fetchFromGemini(userText, mediaList);
-    return res.json({ reply: geminiReply });
-  } catch (geminiError) {
-    errors.push(geminiError.message);
-  }
+    // استخدام نموذج v1beta لدعم خاصية googleSearch المباشرة
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
 
-  try {
-    const cohereReply = await fetchFromCohere(userText);
-    return res.json({ reply: cohereReply });
-  } catch (cohereError) {
-    errors.push(cohereError.message);
-  }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        // تفعيل ميزة البحث المباشر من جوجل للحصول على آخر الأخبار والمباريات
+        tools: [
+          { googleSearch: {} }
+        ]
+      })
+    });
 
-  return res.status(500).json({ 
-    reply: `⚠️ فشل الاتصال بالخدمات:\n1- ${errors[0] || 'خطأ غير معروف'}\n2- ${errors[1] || 'خطأ غير معروف'}` 
-  });
+    const data = await response.json();
+
+    if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+      const replyText = data.candidates[0].content.parts[0].text;
+      return res.json({ reply: replyText });
+    } else {
+      throw new Error(data.error?.message || 'فشل الحصول على إجابة من Gemini');
+    }
+  } catch (error) {
+    return res.status(500).json({ reply: `⚠️ خطأ: ${error.message}` });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
