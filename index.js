@@ -25,6 +25,51 @@ async function fetchFromGemini(userPrompt, mediaList) {
         const matches = media.data.match(/^data:(.+);base64,(.+)$/);
         if (matches) {
           parts.push({
+      async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text && selectedFiles.length === 0) return;
+
+      if (!currentChatId) startNewChat();
+
+      const userText = text;
+      const mediaList = [...selectedFiles];
+
+      input.value = '';
+      selectedFiles = [];
+      renderMediaPreview();
+
+      // إضافة رسالة المستخدم للشاشة
+      appendMessageUI(userText, 'user', mediaList);
+
+      // إضافة رسالة الانتظار
+      const botMsgEl = appendMessageUI('جاري التفكير...', 'bot');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, mediaList: mediaList })
+        });
+
+        const data = await res.json();
+        botMsgEl.innerText = data.reply || "⚠️ لم يصل رد من السيرفر.";
+
+        // حفظ المحادثة
+        const chat = chats.find(c => c.id === currentChatId);
+        if (chat) {
+          if (chat.messages.length === 0) chat.title = userText.slice(0, 20) || 'محادثة جديدة';
+          chat.messages.push({ sender: 'user', text: userText, mediaList: mediaList });
+          chat.messages.push({ sender: 'bot', text: botMsgEl.innerText });
+          saveChats();
+          renderHistory();
+        }
+
+      } catch (err) {
+        botMsgEl.innerText = "⚠️ خطأ في الاتصال:\n" + err.message;
+      }
+      }
+            
             inline_data: { mime_type: matches[1], data: matches[2] }
           });
         }
