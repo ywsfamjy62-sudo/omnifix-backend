@@ -12,9 +12,8 @@ app.use(express.json({ limit: '10mb' }));
 // تهيئة مكتبة Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. عرض ملف index.html أو رسالة نجاح عند فتح رابط Vercel المباشر (لتفادي الشاشة البيضاء)
+// 1. عرض الواجهة عند فتح الرابط المباشر
 app.get('/', (req, res) => {
-  // إذا كان ملف index.html موجوداً بنفس المجلد سيرسله، وإلا سيرسل رسالة حالة السيرفر
   res.sendFile(path.join(__dirname, 'index.html'), (err) => {
     if (err) {
       res.send(`
@@ -27,17 +26,12 @@ app.get('/', (req, res) => {
   });
 });
 
-// 2. مسار فحص صحة السيرفر (Health Check)
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'OmniFix Server is running smooth!' });
-});
-
-// 3. مسار المحادثة والذكاء الاصطناعي الرئيسي
+// 2. مسار المحادثة الرئيسي مع النموذج المحدث
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, image } = req.body;
     
-    // استدعاء نموذج Gemini
+    // تحديث اسم النموذج إلى gemini-2.5-flash لحل خطأ 404
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     let promptParts = [message || ''];
