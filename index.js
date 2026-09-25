@@ -18,7 +18,7 @@ app.post('/api/chat', async (req, res) => {
   const userText = message || '';
 
   if (!GEMINI_API_KEY) {
-    return res.status(500).json({ reply: '⚠️ مفتاح GEMINI_API_KEY غير مضاف في Vercel' });
+    return res.status(500).json({ reply: '⚠️ لم يتم العثور على مفتاح GEMINI_API_KEY في Vercel' });
   }
 
   let parts = [];
@@ -35,12 +35,12 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 
-  const systemPrompt = "أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية بأسلوب كامل ومفصل وواضح.\n\nسؤال المستخدم: ";
+  const systemPrompt = "أنت مساعد الذكاء الاصطناعي OmniFix AI. أجب باللغة العربية بأسلوب كامل وواضح ومفصل.\n\nسؤال المستخدم: ";
   parts.push({ text: systemPrompt + userText });
 
   try {
-    // رابط Gemini v1beta للنموذج المستقر
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
+    // تم تصحيح اسم النموذج ورابط الطلب
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -48,7 +48,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         contents: [{ parts }],
         tools: [
-          { googleSearch: {} }
+          { google_search: {} }
         ]
       })
     });
@@ -59,7 +59,7 @@ app.post('/api/chat', async (req, res) => {
       const replyText = data.candidates[0].content.parts[0].text;
       return res.json({ reply: replyText });
     } else {
-      throw new Error(data.error?.message || 'فشل الحصول على إجابة من Gemini');
+      throw new Error(data.error?.message || 'فشل استجابة النموذج');
     }
   } catch (error) {
     return res.status(500).json({ reply: `⚠️ خطأ: ${error.message}` });
