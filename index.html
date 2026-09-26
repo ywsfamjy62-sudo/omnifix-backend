@@ -381,7 +381,7 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        const res = await fetch('https://omnifix-backend.vercel.app/api/chat', {
+        const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: text, plan: activePlanName, image: sentImg })
