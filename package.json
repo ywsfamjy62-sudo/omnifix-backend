@@ -1,9 +1,13 @@
 {
   "name": "omnifix-backend",
   "version": "1.0.0",
+  "description": "Backend for OmniFix AI",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "@google/generative-ai": "latest",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   }
