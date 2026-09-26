@@ -20,36 +20,29 @@ app.post('/api/chat', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
-      return res.status(400).json({ reply: '⚠️ خطأ: مفتاح GEMINI_API_KEY غير مضاف في إعدادات Vercel!' });
+      return res.status(400).json({ reply: '⚠️ خطأ: المفتاح GEMINI_API_KEY غير موجود في Vercel!' });
     }
 
     const { message, image } = req.body;
-    let contents = [];
+    let parts = [{ text: message || 'مرحبا' }];
 
     if (image) {
       const base64Data = image.split(',')[1] || image;
-      contents.push({
-        parts: [
-          { text: message || '' },
-          {
-            inline_data: {
-              mime_type: 'image/jpeg',
-              data: base64Data
-            }
-          }
-        ]
-      });
-    } else {
-      contents.push({
-        parts: [{ text: message || '' }]
+      parts.push({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data: base64Data
+        }
       });
     }
 
-    // الربط المباشر مع Google API بدعم جميع أنواع المفاتيح الجديدة (AQ... و AIza...)
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // طلب مباشر لجوجل بأحدث نظام مفاتيح ونماذج
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
+      body: JSON.stringify({ contents: [{ parts }] })
     });
 
     const data = await response.json();
@@ -58,7 +51,7 @@ app.post('/api/chat', async (req, res) => {
       return res.status(500).json({ reply: '⚠️ خطأ من جوجل: ' + data.error.message });
     }
 
-    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'لم يرجع الذكاء الاصطناعي بنتيجة.';
+    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'لم يتم استلام رد.';
     res.json({ reply: replyText });
 
   } catch (error) {
