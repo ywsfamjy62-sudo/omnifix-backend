@@ -1,1 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFix - الاتصال المباشر</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #0f172a;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .header {
+      width: 100%;
+      max-width: 400px;
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+    }
+    .balance-title {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .balance-time {
+      font-size: 28px;
+      font-weight: bold;
+      color: #38bdf8;
+      margin-top: 5px;
+    }
+    .ads-section {
+      width: 100%;
+      max-width: 400px;
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .ads-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #f8fafc;
+      text-align: center;
+    }
+    .pkg-btn {
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .pkg-btn:hover {
+      background: #1d4ed8;
+    }
+    .call-section {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .main-call-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #22c55e;
+      color: white;
+      border: none;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+    .main-call-btn:active {
+      transform: scale(0.95);
+    }
+    .end-call-btn {
+      background: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      display: none;
+    }
+    .status-text {
+      margin-top: 15px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="balance-title">رصيدك الحالي للمكالمات المجانية</div>
+    <div class="balance-time" id="timeCounter">00:00:00</div>
+  </div>
+
+  <div class="ads-section">
+    <div class="ads-title">شاهد إعلانًا واحصل على دقائق مجانية</div>
+    <button class="pkg-btn" onclick="addCredit(10)">إعلان 1 👈 10 دقائق</button>
+    <button class="pkg-btn" onclick="addCredit(30)">5 إعلانات 👈 30 دقيقة</button>
+    <button class="pkg-btn" onclick="addCredit(50)">10 إعلانات 👈 50 دقيقة</button>
+  </div>
+
+  <div class="call-section">
+    <button class="main-call-btn" id="callBtn" onclick="toggleCall()">اتصال مباشر</button>
+    <div class="status-text" id="statusText">جاهز للاتصال المباشر</div>
+  </div>
+
+  <script>
+    // إجمالي الثواني المتاحة في الرصيد
+    let totalSeconds = parseInt(localStorage.getItem('omni_seconds')) || 0;
+    let timerInterval = null;
+    let isCalling = false;
+
+    function updateDisplay() {
+      let hrs = Math.floor(totalSeconds / 3600);
+      let mins = Math.floor((totalSeconds % 3600) / 60);
+      let secs = totalSeconds % 60;
+
+      let formatted = 
+        String(hrs).padStart(2, '0') + ':' +
+        String(mins).padStart(2, '0') + ':' +
+        String(secs).padStart(2, '0');
+
+      document.getElementById('timeCounter').innerText = formatted;
+      localStorage.setItem('omni_seconds', totalSeconds);
+    }
+
+    // إضافة دقائق بعد مشاهدة الإعلان
+    function addCredit(minutes) {
+      alert("جاري تحضير الإعلان... عند انتهائه ستضاف " + minutes + " دقائق لرصيدك.");
+      // محاكاة إتمام مشاهدة الإعلان
+      totalSeconds += minutes * 60;
+      updateDisplay();
+    }
+
+    // بدء أو إنهاء المكالمة
+    function toggleCall() {
+      const callBtn = document.getElementById('callBtn');
+      const statusText = document.getElementById('statusText');
+
+      if (!isCalling) {
+        if (totalSeconds <= 0) {
+          alert("عفواً، رصيدك انتهى! شاهد إعلاًناً أولاً للحصول على دقائق مجانية.");
+          return;
+        }
+
+        isCalling = true;
+        callBtn.innerText = "إنهاء المكالمة";
+        callBtn.classList.add('end-call-btn');
+        statusText.innerText = "المكالمة متصلة الآن...";
+
+        // بدء العداد التنازلي للرصيد
+        timerInterval = setInterval(() => {
+          if (totalSeconds > 0) {
+            totalSeconds--;
+            updateDisplay();
+          } else {
+            toggleCall(); // قطع المكالمة تلقائياً عند انتهاء الرصيد
+            alert("انتهى رصيدك! تم إنهاء المكالمة.");
+          }
+        }, 1000);
+
+      } else {
+        isCalling = false;
+        clearInterval(timerInterval);
+        callBtn.innerText = "اتصال مباشر";
+        callBtn.classList.remove('end-call-btn');
+        statusText.innerText = "تم إنهاء المكالمة";
+      }
+    }
+
+    // تحديث الواجهة فور فتح التطبيق
+    updateDisplay();
+  </script>
+</body>
+</html>
 
