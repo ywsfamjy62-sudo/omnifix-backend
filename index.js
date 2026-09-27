@@ -8,15 +8,18 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// هنا التعديل: نحدد الإصدار v1beta عند تهيئة المكتبة
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "ضع_مفتاحك_هنا_مؤقتاً", { apiVersion: 'v1beta' });
+// تهيئة المكتبة باستخدام مفتاح API
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "ضع_مفتاحك_هنا_مؤقتاً");
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, image } = req.body;
 
-    // استخدام الموديل المطلوب
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // السطر الأهم لحل المشكلة نهائياً (تحديد الموديل والإصدار معاً)
+    const model = genAI.getGenerativeModel(
+      { model: "gemini-1.5-flash" },
+      { apiVersion: "v1beta" } 
+    );
 
     let result;
 
@@ -53,4 +56,5 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
+// ضروري جداً لعمل التطبيق على Vercel
 module.exports = app;
